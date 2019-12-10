@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Emby.ApiClient.Net
+namespace Jellyfin.ApiClient.Net
 {
     /// <summary>
     /// Interface IHttpClient

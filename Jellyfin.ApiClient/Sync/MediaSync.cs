@@ -7,10 +7,10 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Data;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient.Sync
+namespace Jellyfin.ApiClient.Sync
 {
     public class MediaSync : IMediaSync
     {

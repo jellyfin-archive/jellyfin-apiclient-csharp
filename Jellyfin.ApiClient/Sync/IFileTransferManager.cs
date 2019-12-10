@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Sync;
 
-namespace Emby.ApiClient.Sync
+namespace Jellyfin.ApiClient.Sync
 {
     public interface IFileTransferManager
     {

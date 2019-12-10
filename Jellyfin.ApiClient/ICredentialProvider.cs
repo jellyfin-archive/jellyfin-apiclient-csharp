@@ -1,8 +1,8 @@
 ﻿using MediaBrowser.Model.ApiClient;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     public interface ICredentialProvider
     {

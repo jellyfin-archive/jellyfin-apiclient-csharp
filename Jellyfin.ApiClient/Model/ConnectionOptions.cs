@@ -1,5 +1,5 @@
 ﻿
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     public class ConnectionOptions
     {

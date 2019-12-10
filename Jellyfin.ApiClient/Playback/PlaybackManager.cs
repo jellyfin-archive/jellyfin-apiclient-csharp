@@ -11,11 +11,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Data;
-using Emby.ApiClient.Model;
-using Emby.ApiClient.Net;
+using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
 
-namespace Emby.ApiClient.Playback
+namespace Jellyfin.ApiClient.Playback
 {
     public class PlaybackManager : IPlaybackManager
     {

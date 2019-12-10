@@ -2,7 +2,7 @@
 using MediaBrowser.Model.Dto;
 using System.Collections.Generic;
 
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     public class ConnectionResult
     {

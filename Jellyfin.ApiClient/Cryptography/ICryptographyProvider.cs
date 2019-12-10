@@ -1,5 +1,5 @@
 ﻿
-namespace Emby.ApiClient.Cryptography
+namespace Jellyfin.ApiClient.Cryptography
 {
     public interface ICryptographyProvider
     {

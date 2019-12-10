@@ -2,9 +2,9 @@
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Emby.ApiClient.Net;
+using Jellyfin.ApiClient.Net;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     public class PortableHttpWebRequestFactory : IHttpWebRequestFactory
     {

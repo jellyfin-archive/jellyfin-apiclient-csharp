@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Emby.ApiClient.Data
+namespace Jellyfin.ApiClient.Data
 {
     /// <summary>
     /// Interface IItemRepository

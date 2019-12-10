@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Emby.ApiClient.Net
+namespace Jellyfin.ApiClient.Net
 {
     public class HttpHeaders : Dictionary<string,string>
     {

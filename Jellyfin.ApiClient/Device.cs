@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     public class Device : IDevice
     {

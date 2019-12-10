@@ -12,10 +12,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Emby.ApiClient.Cryptography;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Cryptography;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient.Data
+namespace Jellyfin.ApiClient.Data
 {
     public class LocalAssetManager : ILocalAssetManager
     {

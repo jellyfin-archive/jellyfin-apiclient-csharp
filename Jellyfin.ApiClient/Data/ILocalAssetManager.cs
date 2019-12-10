@@ -6,9 +6,9 @@ using MediaBrowser.Model.Users;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient.Data
+namespace Jellyfin.ApiClient.Data
 {
     public interface ILocalAssetManager
     {

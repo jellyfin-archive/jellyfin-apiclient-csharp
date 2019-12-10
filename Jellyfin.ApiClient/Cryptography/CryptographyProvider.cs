@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace Emby.ApiClient.Cryptography
+namespace Jellyfin.ApiClient.Cryptography
 {
     public class CryptographyProvider : ICryptographyProvider
     {

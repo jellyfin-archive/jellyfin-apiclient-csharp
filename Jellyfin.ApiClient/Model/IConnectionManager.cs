@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Model.ApiClient;
 
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     public interface IConnectionManager
     {

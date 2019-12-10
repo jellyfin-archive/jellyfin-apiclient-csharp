@@ -1,6 +1,6 @@
 ﻿using MediaBrowser.Model.Querying;
 
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     public class SeasonQuery
     {

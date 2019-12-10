@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Emby.ApiClient.Sync
+namespace Jellyfin.ApiClient.Sync
 {
     public class DoubleProgress : Progress<double>, IDisposable
     {

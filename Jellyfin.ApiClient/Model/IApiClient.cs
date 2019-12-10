@@ -25,7 +25,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     /// <summary>
     /// Interface IApiClient

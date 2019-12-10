@@ -1,4 +1,4 @@
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     public enum ConnectionState
     {

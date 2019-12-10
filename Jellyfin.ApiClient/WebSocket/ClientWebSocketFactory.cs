@@ -1,8 +1,8 @@
 ﻿using MediaBrowser.Model.Logging;
 using System;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient.WebSocket
+namespace Jellyfin.ApiClient.WebSocket
 {
     /// <summary>
     /// Class ClientWebSocketFactory

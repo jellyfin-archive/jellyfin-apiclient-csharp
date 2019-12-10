@@ -2,9 +2,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient.Net
+namespace Jellyfin.ApiClient.Net
 {
     public interface INetworkConnection
     {

@@ -9,10 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Emby.ApiClient.Model;
-using Emby.ApiClient.Net;
+using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     /// <summary>
     /// Provides api methods that are usable on all platforms

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Emby.ApiClient.Net
+namespace Jellyfin.ApiClient.Net
 {
     public interface IServerLocator
     {

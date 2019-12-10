@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 
-namespace Emby.ApiClient.Data
+namespace Jellyfin.ApiClient.Data
 {
     public interface IImageRepository
     {

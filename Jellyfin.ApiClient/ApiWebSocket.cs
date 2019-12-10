@@ -17,10 +17,10 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 using Newtonsoft.Json;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     public partial class ApiClient : IServerEvents, IDisposable
     {

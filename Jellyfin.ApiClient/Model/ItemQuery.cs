@@ -2,7 +2,7 @@
 using System;
 using MediaBrowser.Model.Querying;
 
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     /// <summary>
     /// Contains all the possible parameters that can be used to query for items

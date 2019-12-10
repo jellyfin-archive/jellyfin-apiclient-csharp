@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace Emby.ApiClient.Net
+namespace Jellyfin.ApiClient.Net
 {
     public class HttpRequest
     {

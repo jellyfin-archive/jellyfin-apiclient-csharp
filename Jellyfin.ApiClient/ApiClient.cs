@@ -29,12 +29,12 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Cryptography;
-using Emby.ApiClient.Data;
-using Emby.ApiClient.Model;
-using Emby.ApiClient.Net;
+using Jellyfin.ApiClient.Cryptography;
+using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     /// <summary>
     /// Provides api methods centered around an HttpClient

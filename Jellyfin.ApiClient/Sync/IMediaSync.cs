@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.ApiClient;
 
-namespace Emby.ApiClient.Sync
+namespace Jellyfin.ApiClient.Sync
 {
     public interface IMediaSync
     {

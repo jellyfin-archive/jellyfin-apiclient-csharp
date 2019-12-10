@@ -4,8 +4,8 @@ using MediaBrowser.Model.Sync;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Data;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
 
 namespace Emby.ApiClient.Sync
 {

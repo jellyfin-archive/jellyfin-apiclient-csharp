@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     /// <summary>
     /// Class NewtonsoftJsonSerializer

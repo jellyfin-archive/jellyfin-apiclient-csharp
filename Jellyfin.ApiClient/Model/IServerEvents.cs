@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using MediaBrowser.Model.ApiClient;
 
-namespace Emby.ApiClient.Model
+namespace Jellyfin.ApiClient.Model
 {
     /// <summary>
     /// Interface IServerEvents

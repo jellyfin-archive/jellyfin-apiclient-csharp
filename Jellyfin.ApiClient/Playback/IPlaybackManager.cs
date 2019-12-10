@@ -4,9 +4,9 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Session;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient.Playback
+namespace Jellyfin.ApiClient.Playback
 {
     public interface IPlaybackManager
     {

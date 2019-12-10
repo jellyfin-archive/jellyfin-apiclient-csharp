@@ -3,10 +3,10 @@ using MediaBrowser.Model.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 using WebSocket4Net;
 
-namespace Emby.ApiClient.WebSocket
+namespace Jellyfin.ApiClient.WebSocket
 {
     /// <summary>
     /// Class WebSocket4NetClientWebSocket

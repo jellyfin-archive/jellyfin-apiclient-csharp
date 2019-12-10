@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     /// <summary>
     /// Class QueryStringDictionary

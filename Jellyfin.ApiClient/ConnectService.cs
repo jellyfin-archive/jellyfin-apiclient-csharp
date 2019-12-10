@@ -9,10 +9,10 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Cryptography;
-using Emby.ApiClient.Net;
+using Jellyfin.ApiClient.Cryptography;
+using Jellyfin.ApiClient.Net;
 
-namespace Emby.ApiClient
+namespace Jellyfin.ApiClient
 {
     public class ConnectService
     {

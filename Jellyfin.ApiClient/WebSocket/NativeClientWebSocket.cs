@@ -4,9 +4,9 @@ using System;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.ApiClient.Model;
+using Jellyfin.ApiClient.Model;
 
-namespace Emby.ApiClient.WebSocket
+namespace Jellyfin.ApiClient.WebSocket
 {
     /// <summary>
     /// Class NativeClientWebSocket
