@@ -6,7 +6,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Emby.ApiClient.Sync
+namespace Jellyfin.ApiClient.Sync
 {
     class FileTransferManager : IFileTransferManager
     {
