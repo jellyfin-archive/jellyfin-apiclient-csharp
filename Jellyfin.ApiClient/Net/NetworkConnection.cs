@@ -1,4 +1,4 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Logging;
 using System;
 using System.Net;
@@ -6,7 +6,6 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Model;
 
 namespace Jellyfin.ApiClient.Net
 {

@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Cryptography;
+using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
@@ -12,8 +13,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Cryptography;
-using Jellyfin.ApiClient.Model;
 
 namespace Jellyfin.ApiClient.Data
 {

@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.Dto;
+﻿using MediaBrowser.Model.ApiClient;
+using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Events;
 using MediaBrowser.Model.Plugins;
@@ -8,7 +9,6 @@ using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Updates;
 using System;
 using System.Collections.Generic;
-using MediaBrowser.Model.ApiClient;
 
 namespace Jellyfin.ApiClient.Model
 {

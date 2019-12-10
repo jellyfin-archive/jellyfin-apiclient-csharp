@@ -1,4 +1,8 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Cryptography;
+using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
+using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Channels;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Devices;
@@ -29,11 +33,6 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Cryptography;
-using Jellyfin.ApiClient.Data;
-using Jellyfin.ApiClient.Model;
-using Jellyfin.ApiClient.Net;
-
 namespace Jellyfin.ApiClient
 {
     /// <summary>

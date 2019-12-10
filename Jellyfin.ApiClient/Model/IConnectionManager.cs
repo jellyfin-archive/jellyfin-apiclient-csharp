@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.Connect;
+﻿using MediaBrowser.Model.ApiClient;
+using MediaBrowser.Model.Connect;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Events;
 using MediaBrowser.Model.Session;
@@ -6,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Model.ApiClient;
 
 namespace Jellyfin.ApiClient.Model
 {

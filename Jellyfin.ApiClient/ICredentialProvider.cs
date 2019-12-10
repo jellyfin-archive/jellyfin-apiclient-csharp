@@ -1,6 +1,5 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Model;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Model;
 
 namespace Jellyfin.ApiClient
 {

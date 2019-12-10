@@ -1,4 +1,8 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Cryptography;
+using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
+using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Connect;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Events;
@@ -11,13 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Cryptography;
-using Jellyfin.ApiClient.Data;
-using Jellyfin.ApiClient.Model;
-using Jellyfin.ApiClient.Net;
 
 namespace Jellyfin.ApiClient
 {

@@ -1,5 +1,4 @@
-﻿
-namespace Jellyfin.ApiClient.Cryptography
+﻿namespace Jellyfin.ApiClient.Cryptography
 {
     public interface ICryptographyProvider
     {

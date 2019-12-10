@@ -1,12 +1,9 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Devices;
-using Microsoft.Win32;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Model;
 
 namespace Jellyfin.ApiClient
 {

@@ -1,4 +1,6 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
@@ -11,9 +13,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Data;
-using Jellyfin.ApiClient.Model;
-using Jellyfin.ApiClient.Net;
 
 namespace Jellyfin.ApiClient.Playback
 {

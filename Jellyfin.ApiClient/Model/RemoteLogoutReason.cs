@@ -1,5 +1,4 @@
-﻿
-namespace Jellyfin.ApiClient.Model
+﻿namespace Jellyfin.ApiClient.Model
 {
     public enum RemoteLogoutReason
     {

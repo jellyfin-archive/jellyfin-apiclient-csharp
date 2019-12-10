@@ -1,6 +1,6 @@
-﻿using MediaBrowser.Model.Logging;
+﻿using Jellyfin.ApiClient.Model;
+using MediaBrowser.Model.Logging;
 using System;
-using Jellyfin.ApiClient.Model;
 
 namespace Jellyfin.ApiClient.WebSocket
 {

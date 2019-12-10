@@ -1,4 +1,4 @@
-using MediaBrowser.Model.ApiClient;
+using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Sync;
@@ -6,7 +6,6 @@ using MediaBrowser.Model.Users;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Model;
 
 namespace Jellyfin.ApiClient.Data
 {

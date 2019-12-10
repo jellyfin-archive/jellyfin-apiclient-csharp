@@ -1,9 +1,8 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Model;
 using WebSocket4Net;
 
 namespace Jellyfin.ApiClient.WebSocket

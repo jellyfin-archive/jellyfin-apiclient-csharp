@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.LiveTv;
@@ -6,11 +7,8 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Jellyfin.ApiClient.Model;
-using Jellyfin.ApiClient.Net;
 
 namespace Jellyfin.ApiClient
 {

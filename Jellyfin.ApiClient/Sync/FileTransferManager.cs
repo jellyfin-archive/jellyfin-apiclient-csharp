@@ -1,11 +1,10 @@
-﻿using MediaBrowser.Model.ApiClient;
+﻿using Jellyfin.ApiClient.Data;
+using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Sync;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Data;
-using Jellyfin.ApiClient.Model;
 
 namespace Emby.ApiClient.Sync
 {

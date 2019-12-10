@@ -1,7 +1,7 @@
-﻿using MediaBrowser.Model.Extensions;
+﻿using MediaBrowser.Model.ApiClient;
+using MediaBrowser.Model.Extensions;
 using System;
 using System.Collections.Generic;
-using MediaBrowser.Model.ApiClient;
 
 namespace Jellyfin.ApiClient.Model
 {

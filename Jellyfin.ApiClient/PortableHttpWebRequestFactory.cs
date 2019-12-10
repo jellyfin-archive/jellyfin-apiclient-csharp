@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Jellyfin.ApiClient.Net;
+using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Jellyfin.ApiClient.Net;
 
 namespace Jellyfin.ApiClient
 {
