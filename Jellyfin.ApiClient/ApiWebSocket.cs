@@ -10,6 +10,7 @@ using MediaBrowser.Model.Session;
 using MediaBrowser.Model.Sync;
 using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Updates;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -56,10 +57,6 @@ namespace Jellyfin.ApiClient
         public event EventHandler<GenericEventArgs<SessionInfoDto>> PlaybackStart;
         public event EventHandler<GenericEventArgs<SessionInfoDto>> PlaybackStopped;
         public event EventHandler<GenericEventArgs<SessionInfoDto>> SessionEnded;
-        public event EventHandler<GenericEventArgs<SyncJobCreationResult>> SyncJobCreated;
-        public event EventHandler<GenericEventArgs<SyncJob>> SyncJobCancelled;
-        public event EventHandler<GenericEventArgs<List<SyncJob>>> SyncJobsUpdated;
-        public event EventHandler<GenericEventArgs<CompleteSyncJobInfo>> SyncJobUpdated;
 
         /// <summary>
         /// The _web socket
@@ -106,13 +103,13 @@ namespace Jellyfin.ApiClient
                 {
                     var socket = _webSocketFactory();
 
-                    Logger.Info("Created new web socket of type {0}", socket.GetType().Name);
+                    Logger.LogInformation("Created new web socket of type {0}", socket.GetType().Name);
 
-                    Logger.Info("Connecting to {0}", url);
+                    Logger.LogInformation("Connecting to {0}", url);
 
                     await socket.ConnectAsync(url, cancellationToken).ConfigureAwait(false);
 
-                    Logger.Info("Connected to {0}", url);
+                    Logger.LogInformation("Connected to {0}", url);
 
                     socket.OnReceiveBytes = OnMessageReceived;
                     socket.OnReceive = OnMessageReceived;
@@ -133,7 +130,7 @@ namespace Jellyfin.ApiClient
                 }
                 catch (Exception ex)
                 {
-                    Logger.ErrorException("Error connecting to {0}", ex, url);
+                    Logger.LogError("Error connecting to {0}", ex, url);
                 }
             }
         }
@@ -161,7 +158,7 @@ namespace Jellyfin.ApiClient
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
         void _currentWebSocket_Closed(object sender, EventArgs e)
         {
-            Logger.Warn("Web socket connection closed.");
+            Logger.LogWarning("Web socket connection closed.");
 
             if (WebSocketClosed != null)
             {
@@ -199,7 +196,7 @@ namespace Jellyfin.ApiClient
             }
             catch (Exception ex)
             {
-                Logger.ErrorException("Error sending web socket message", ex);
+                Logger.LogError("Error sending web socket message", ex);
 
                 throw;
             }
@@ -297,7 +294,7 @@ namespace Jellyfin.ApiClient
 
             if (socket != null)
             {
-                Logger.Debug("Disposing client web socket");
+                Logger.LogDebug("Disposing client web socket");
 
                 try
                 {
@@ -305,7 +302,7 @@ namespace Jellyfin.ApiClient
                 }
                 catch (Exception ex)
                 {
-                    Logger.ErrorException("Error disposing web socket {0}", ex);
+                    Logger.LogError("Error disposing web socket {0}", ex);
                 }
                 _currentWebSocket = null;
             }
@@ -349,7 +346,7 @@ namespace Jellyfin.ApiClient
             }
             catch (Exception ex)
             {
-                Logger.ErrorException("Error in OnMessageReceivedInternal", ex);
+                Logger.LogError("Error in OnMessageReceivedInternal", ex);
             }
         }
 
@@ -358,7 +355,7 @@ namespace Jellyfin.ApiClient
             // deserialize the WebSocketMessage with an object payload
             var messageType = GetMessageType(json);
 
-            Logger.Info("Received web socket message: {0}", messageType);
+            Logger.LogInformation("Received web socket message: {0}", messageType);
 
             if (string.Equals(messageType, "LibraryChanged"))
             {
@@ -474,20 +471,6 @@ namespace Jellyfin.ApiClient
                     Sessions = JsonSerializer.DeserializeFromString<WebSocketMessage<SessionInfoDto[]>>(json).Data
                 }));
             }
-            else if (string.Equals(messageType, "SyncJobs"))
-            {
-                FireEvent(SyncJobsUpdated, this, new GenericEventArgs<List<SyncJob>>
-                {
-                    Argument = JsonSerializer.DeserializeFromString<WebSocketMessage<List<SyncJob>>>(json).Data
-                });
-            }
-            else if (string.Equals(messageType, "SyncJob"))
-            {
-                FireEvent(SyncJobUpdated, this, new GenericEventArgs<CompleteSyncJobInfo>
-                {
-                    Argument = JsonSerializer.DeserializeFromString<WebSocketMessage<CompleteSyncJobInfo>>(json).Data
-                });
-            }
             else if (string.Equals(messageType, "UserDataChanged"))
             {
                 FireEvent(UserDataChanged, this, new GenericEventArgs<UserDataChangeInfo>
@@ -500,20 +483,6 @@ namespace Jellyfin.ApiClient
                 FireEvent(SessionEnded, this, new GenericEventArgs<SessionInfoDto>
                 {
                     Argument = JsonSerializer.DeserializeFromString<WebSocketMessage<SessionInfoDto>>(json).Data
-                });
-            }
-            else if (string.Equals(messageType, "SyncJobCreated"))
-            {
-                FireEvent(SyncJobCreated, this, new GenericEventArgs<SyncJobCreationResult>
-                {
-                    Argument = JsonSerializer.DeserializeFromString<WebSocketMessage<SyncJobCreationResult>>(json).Data
-                });
-            }
-            else if (string.Equals(messageType, "SyncJobCancelled"))
-            {
-                FireEvent(SyncJobCancelled, this, new GenericEventArgs<SyncJob>
-                {
-                    Argument = JsonSerializer.DeserializeFromString<WebSocketMessage<SyncJob>>(json).Data
                 });
             }
             else if (string.Equals(messageType, "PlaybackStart"))
@@ -581,7 +550,7 @@ namespace Jellyfin.ApiClient
                     args.Command.Arguments.TryGetValue("Text", out text);
                     args.Command.Arguments.TryGetValue("TimeoutMs", out timeoutMs);
 
-                    long? timeoutVal = string.IsNullOrEmpty(timeoutMs) ? (long?)null : long.Parse(timeoutMs, CultureInfo.InvariantCulture);
+                    long? timeoutVal = string.IsNullOrEmpty(timeoutMs) ? (long?)null : long.Parse(timeoutMs);
 
                     FireEvent(MessageCommand, this, new GenericEventArgs<MessageCommand>
                     {
@@ -702,7 +671,7 @@ namespace Jellyfin.ApiClient
                 }
                 catch (Exception ex)
                 {
-                    Logger.ErrorException("Error in event handler", ex);
+                    Logger.LogError("Error in event handler", ex);
                 }
             }
         }

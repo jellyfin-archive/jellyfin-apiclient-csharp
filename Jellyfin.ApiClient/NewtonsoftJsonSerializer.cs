@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Jellyfin.ApiClient
 {
@@ -24,6 +25,18 @@ namespace Jellyfin.ApiClient
             {
                 JsonSerializer.Create(new JsonSerializerSettings()).Serialize(jsonWriter, obj);
             }
+        }
+
+        /// <summary>
+        /// Serializes to stream.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj">The obj.</param>
+        /// <param name="stream">The stream.</param>
+        /// <exception cref="System.ArgumentNullException">obj</exception>
+        public void SerializeToStream<T>(T obj, Stream stream)
+        {
+            SerializeToStream((object)obj, stream);
         }
 
         /// <summary>
@@ -130,6 +143,16 @@ namespace Jellyfin.ApiClient
         public T DeserializeFromFile<T>(string file) where T : class
         {
             throw new NotImplementedException();
+        }
+
+        public Task<object> DeserializeFromStreamAsync(Stream stream, Type type)
+        {
+            return Task.FromResult(DeserializeFromStream(stream, type));
+        }
+
+        public Task<T> DeserializeFromStreamAsync<T>(Stream stream)
+        {
+            return Task.FromResult(DeserializeFromStream<T>(stream));
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Jellyfin.ApiClient.Model;
-using MediaBrowser.Model.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -52,7 +52,7 @@ namespace Jellyfin.ApiClient.Net
             const int payloadSize = 102;
 
             var macBytes = PhysicalAddress.Parse(macAddress).GetAddressBytes();
-            _logger.Debug(string.Format("Sending magic packet to {0}", macAddress));
+            _logger.LogDebug(string.Format("Sending magic packet to {0}", macAddress));
 
             // Construct magic packet
             var payload = new byte[payloadSize];

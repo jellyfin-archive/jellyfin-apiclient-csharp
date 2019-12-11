@@ -1,13 +1,12 @@
-﻿using Jellyfin.ApiClient.Data;
-using Jellyfin.ApiClient.Model;
+﻿using Jellyfin.ApiClient.Model;
 using Jellyfin.ApiClient.Net;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Session;
 using MediaBrowser.Model.Users;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,25 +17,22 @@ namespace Jellyfin.ApiClient.Playback
 {
     public class PlaybackManager : IPlaybackManager
     {
-        private readonly ILocalAssetManager _localAssetManager;
         private readonly ILogger _logger;
         private readonly IDevice _device;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PlaybackManager" /> class.
         /// </summary>
-        /// <param name="localAssetManager">The local asset manager.</param>
         /// <param name="device">The device.</param>
         /// <param name="logger">The logger.</param>
-        public PlaybackManager(ILocalAssetManager localAssetManager, IDevice device, ILogger logger)
+        public PlaybackManager(IDevice device, ILogger logger)
         {
-            _localAssetManager = localAssetManager;
             _device = device;
             _logger = logger;
         }
 
-        public PlaybackManager(ILocalAssetManager localAssetManager, IDevice device, ILogger logger, INetworkConnection network)
-            : this(localAssetManager, device, logger)
+        public PlaybackManager(IDevice device, ILogger logger, INetworkConnection network)
+            : this(device, logger)
         {
         }
 
@@ -106,36 +102,6 @@ namespace Jellyfin.ApiClient.Playback
         public async Task<StreamInfo> GetAudioStreamInfo(string serverId, AudioOptions options, bool isOffline, IApiClient apiClient)
         {
             var streamBuilder = GetStreamBuilder();
-
-            var localItem = await _localAssetManager.GetLocalItem(serverId, options.ItemId);
-            if (localItem != null)
-            {
-                var localMediaSource = localItem.Item.MediaSources[0];
-
-                // Use the local media source, unless a specific server media source was requested
-                if (string.IsNullOrWhiteSpace(options.MediaSourceId) ||
-                    string.Equals(localMediaSource.Id, options.MediaSourceId,
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    // Finally, check to make sure the local file is actually available at this time
-                    var fileExists = await _localAssetManager.FileExists(localMediaSource.Path).ConfigureAwait(false);
-
-                    if (fileExists)
-                    {
-                        options.MediaSources = localItem.Item.MediaSources.ToArray();
-
-                        var result = streamBuilder.BuildAudioItem(options);
-                        if (result == null)
-                        {
-                            _logger.Warn("LocalItem returned no compatible streams. Will dummy up a StreamInfo to force it to direct play.");
-                            var mediaSource = localItem.Item.MediaSources.First();
-                            result = GetForcedDirectPlayStreamInfo(DlnaProfileType.Audio, options, mediaSource);
-                        }
-                        result.PlayMethod = PlayMethod.DirectPlay;
-                        return result;
-                    }
-                }
-            }
 
             PlaybackInfoResponse playbackInfo = null;
             string playSessionId = null;
@@ -294,37 +260,6 @@ namespace Jellyfin.ApiClient.Playback
         {
             var streamBuilder = GetStreamBuilder();
 
-            var localItem = await _localAssetManager.GetLocalItem(serverId, options.ItemId);
-
-            if (localItem != null)
-            {
-                var localMediaSource = localItem.Item.MediaSources[0];
-
-                // Use the local media source, unless a specific server media source was requested
-                if (string.IsNullOrWhiteSpace(options.MediaSourceId) ||
-                    string.Equals(localMediaSource.Id, options.MediaSourceId,
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    // Finally, check to make sure the local file is actually available at this time
-                    var fileExists = await _localAssetManager.FileExists(localMediaSource.Path).ConfigureAwait(false);
-
-                    if (fileExists)
-                    {
-                        options.MediaSources = localItem.Item.MediaSources.ToArray();
-
-                        var result = streamBuilder.BuildVideoItem(options);
-                        if (result == null)
-                        {
-                            _logger.Warn("LocalItem returned no compatible streams. Will dummy up a StreamInfo to force it to direct play.");
-                            var mediaSource = localItem.Item.MediaSources.First();
-                            result = GetForcedDirectPlayStreamInfo(DlnaProfileType.Video, options, mediaSource);
-                        }
-                        result.PlayMethod = PlayMethod.DirectPlay;
-                        return result;
-                    }
-                }
-            }
-
             var streamInfo = streamBuilder.BuildVideoItem(options);
             EnsureSuccess(streamInfo);
             return streamInfo;
@@ -407,7 +342,7 @@ namespace Jellyfin.ApiClient.Playback
         /// <param name="isOffline">if set to <c>true</c> [is offline].</param>
         /// <param name="apiClient">The current apiClient. It can be null if offline</param>
         /// <returns>Task.</returns>
-        public async Task ReportPlaybackStopped(PlaybackStopInfo info, StreamInfo streamInfo, string serverId, string userId, bool isOffline, IApiClient apiClient)
+        public async Task ReportPlaybackStopped(PlaybackStopInfo info, StreamInfo streamInfo, string serverId, Guid userId, bool isOffline, IApiClient apiClient)
         {
             if (isOffline)
             {
@@ -421,7 +356,6 @@ namespace Jellyfin.ApiClient.Playback
                     UserId = userId
                 };
 
-                await _localAssetManager.RecordUserAction(action).ConfigureAwait(false);
                 return;
             }
 
@@ -442,7 +376,7 @@ namespace Jellyfin.ApiClient.Playback
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error in ReportPlaybackStoppedAsync", ex);
+                _logger.LogError("Error in ReportPlaybackStoppedAsync", ex);
             }
         }
 
@@ -466,7 +400,7 @@ namespace Jellyfin.ApiClient.Playback
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error in StopStranscoding", ex);
+                _logger.LogError("Error in StopStranscoding", ex);
             }
         }
     }

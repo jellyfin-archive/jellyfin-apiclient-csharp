@@ -1,5 +1,6 @@
 ﻿using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Extensions;
+using MediaBrowser.Model.System;
 using System;
 using System.Collections.Generic;
 
@@ -42,33 +43,15 @@ namespace Jellyfin.ApiClient.Model
                 {
                     existing.DateLastAccessed = server.DateLastAccessed;
                 }
-                
-                existing.UserLinkType = server.UserLinkType;
 
                 if (!string.IsNullOrEmpty(server.AccessToken))
                 {
                     existing.AccessToken = server.AccessToken;
                     existing.UserId = server.UserId;
                 }
-                if (!string.IsNullOrEmpty(server.ExchangeToken))
+                if (!string.IsNullOrEmpty(server.Address))
                 {
-                    existing.ExchangeToken = server.ExchangeToken;
-                }
-                if (!string.IsNullOrEmpty(server.RemoteAddress))
-                {
-                    existing.RemoteAddress = server.RemoteAddress;
-                }
-                if (!string.IsNullOrEmpty(server.ConnectServerId))
-                {
-                    existing.ConnectServerId = server.ConnectServerId;
-                }
-                if (!string.IsNullOrEmpty(server.LocalAddress))
-                {
-                    existing.LocalAddress = server.LocalAddress;
-                }
-                if (!string.IsNullOrEmpty(server.ManualAddress))
-                {
-                    existing.ManualAddress = server.ManualAddress;
+                    existing.Address = server.Address;
                 }
                 if (!string.IsNullOrEmpty(server.Name))
                 {
@@ -81,10 +64,6 @@ namespace Jellyfin.ApiClient.Model
                     {
                         existing.WakeOnLanInfos.Add(info);
                     }
-                }
-                if (server.LastConnectionMode.HasValue)
-                {
-                    existing.LastConnectionMode = server.LastConnectionMode;
                 }
             }
             else

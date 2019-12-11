@@ -1,5 +1,4 @@
 ﻿using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Connect;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Events;
 using MediaBrowser.Model.Session;
@@ -21,17 +20,9 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         event EventHandler<GenericEventArgs<UserDto>> LocalUserSignIn;
         /// <summary>
-        /// Occurs when [connect user sign in].
-        /// </summary>
-        event EventHandler<GenericEventArgs<ConnectUser>> ConnectUserSignIn;
-        /// <summary>
         /// Occurs when [local user sign out].
         /// </summary>
         event EventHandler<GenericEventArgs<IApiClient>> LocalUserSignOut;
-        /// <summary>
-        /// Occurs when [connect user sign out].
-        /// </summary>
-        event EventHandler<EventArgs> ConnectUserSignOut;
         /// <summary>
         /// Occurs when [remote logged out].
         /// </summary>
@@ -42,12 +33,6 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <value>The device.</value>
         IDevice Device { get; }
-
-        /// <summary>
-        /// Gets the connect user.
-        /// </summary>
-        /// <value>The connect user.</value>
-        ConnectUser ConnectUser { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether [save local credentials].
@@ -122,35 +107,9 @@ namespace Jellyfin.ApiClient.Model
         Task Logout();
 
         /// <summary>
-        /// Logins to connect.
-        /// </summary>
-        /// <returns>Task.</returns>
-        Task LoginToConnect(string username, string password);
-
-        /// <summary>
         /// Gets the active api client instance
         /// </summary>
         IApiClient CurrentApiClient { get; }
-
-        /// <summary>
-        /// Creates the pin.
-        /// </summary>
-        /// <returns>Task&lt;PinCreationResult&gt;.</returns>
-        Task<PinCreationResult> CreatePin();
-
-        /// <summary>
-        /// Gets the pin status.
-        /// </summary>
-        /// <param name="pin">The pin.</param>
-        /// <returns>Task&lt;PinStatusResult&gt;.</returns>
-        Task<PinStatusResult> GetPinStatus(PinCreationResult pin);
-
-        /// <summary>
-        /// Exchanges the pin.
-        /// </summary>
-        /// <param name="pin">The pin.</param>
-        /// <returns>Task.</returns>
-        Task ExchangePin(PinCreationResult pin);
 
         /// <summary>
         /// Gets the server information.
@@ -164,15 +123,5 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         Task<List<ServerInfo>> GetAvailableServers(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Signups for connect.
-        /// </summary>
-        /// <param name="email">The email.</param>
-        /// <param name="username">The username.</param>
-        /// <param name="password">The password.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task.</returns>
-        Task<ConnectSignupResponse> SignupForConnect(string email, string username, string password, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

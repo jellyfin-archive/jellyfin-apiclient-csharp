@@ -1,5 +1,5 @@
 ﻿using Jellyfin.ApiClient.Model;
-using MediaBrowser.Model.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -144,7 +144,7 @@ namespace Jellyfin.ApiClient.WebSocket
 
                 if (state == MediaBrowser.Model.Net.WebSocketState.Open || state == MediaBrowser.Model.Net.WebSocketState.Connecting)
                 {
-                    _logger.Info("Sending web socket close message");
+                    _logger.LogInformation("Sending web socket close message");
 
                     _socket.Close();
                 }

@@ -1,5 +1,4 @@
 ﻿using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Connect;
 using MediaBrowser.Model.System;
 using System;
 using System.Collections.Generic;
@@ -10,17 +9,11 @@ namespace Jellyfin.ApiClient.Model
     {
         public String Name { get; set; }
         public String Id { get; set; }
-        public String ConnectServerId { get; set; }
-        public String LocalAddress { get; set; }
-        public String RemoteAddress { get; set; }
-        public String ManualAddress { get; set; }
-        public String UserId { get; set; }
+        public String Address { get; set; }
+        public Guid UserId { get; set; }
         public String AccessToken { get; set; }
         public List<WakeOnLanInfo> WakeOnLanInfos { get; set; }
         public DateTime DateLastAccessed { get; set; }
-        public String ExchangeToken { get; set; }
-        public UserLinkType? UserLinkType { get; set; }
-        public ConnectionMode? LastConnectionMode { get; set; }
 
         public ServerInfo()
         {
@@ -34,12 +27,12 @@ namespace Jellyfin.ApiClient.Model
 
             if (!string.IsNullOrEmpty(systemInfo.LocalAddress))
             {
-                LocalAddress = systemInfo.LocalAddress;
+                Address = systemInfo.LocalAddress;
             }
 
-            if (!string.IsNullOrEmpty(systemInfo.WanAddress))
+            if (!string.IsNullOrEmpty(systemInfo.LocalAddress))
             {
-                RemoteAddress = systemInfo.WanAddress;
+                Address = systemInfo.LocalAddress;
             }
 
             var fullSystemInfo = systemInfo as SystemInfo;
@@ -55,21 +48,6 @@ namespace Jellyfin.ApiClient.Model
                         MacAddress = fullSystemInfo.MacAddress
                     });
                 }
-            }
-        }
-
-        public string GetAddress(ConnectionMode mode)
-        {
-            switch (mode)
-            {
-                case ConnectionMode.Local:
-                    return LocalAddress;
-                case ConnectionMode.Manual:
-                    return ManualAddress;
-                case ConnectionMode.Remote:
-                    return RemoteAddress;
-                default:
-                    throw new ArgumentException("Unexpected ConnectionMode");
             }
         }
     }

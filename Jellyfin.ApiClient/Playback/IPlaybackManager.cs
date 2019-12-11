@@ -2,6 +2,7 @@ using Jellyfin.ApiClient.Model;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Session;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -98,6 +99,6 @@ namespace Jellyfin.ApiClient.Playback
         /// <param name="isOffline">if set to <c>true</c> [is offline].</param>
         /// <param name="apiClient">The current apiClient. It can be null if offline</param>
         /// <returns>Task.</returns>
-        Task ReportPlaybackStopped(PlaybackStopInfo info, StreamInfo streamInfo, string serverId, string userId, bool isOffline, IApiClient apiClient);
+        Task ReportPlaybackStopped(PlaybackStopInfo info, StreamInfo streamInfo, string serverId, Guid userId, bool isOffline, IApiClient apiClient);
     }
 }

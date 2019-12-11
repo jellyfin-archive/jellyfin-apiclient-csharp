@@ -1,16 +1,14 @@
-﻿using Jellyfin.ApiClient.Cryptography;
-using Jellyfin.ApiClient.Data;
-using Jellyfin.ApiClient.Model;
+﻿using Jellyfin.ApiClient.Model;
 using Jellyfin.ApiClient.Net;
+using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Connect;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Events;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Session;
 using MediaBrowser.Model.System;
 using MediaBrowser.Model.Users;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -23,9 +21,7 @@ namespace Jellyfin.ApiClient
     public class ConnectionManager : IConnectionManager
     {
         public event EventHandler<GenericEventArgs<UserDto>> LocalUserSignIn;
-        public event EventHandler<GenericEventArgs<ConnectUser>> ConnectUserSignIn;
         public event EventHandler<GenericEventArgs<IApiClient>> LocalUserSignOut;
-        public event EventHandler<EventArgs> ConnectUserSignOut;
         public event EventHandler<EventArgs> RemoteLoggedOut;
 
         public event EventHandler<GenericEventArgs<ConnectionResult>> Connected;
@@ -36,8 +32,6 @@ namespace Jellyfin.ApiClient
         private readonly IServerLocator _serverDiscovery;
         private readonly IAsyncHttpClient _httpClient;
         private readonly Func<IClientWebSocket> _webSocketFactory;
-        private readonly ICryptographyProvider _cryptographyProvider;
-        private readonly ILocalAssetManager _localAssetManager;
 
         public Dictionary<string, IApiClient> ApiClients { get; private set; }
 
@@ -48,10 +42,6 @@ namespace Jellyfin.ApiClient
 
         public IApiClient CurrentApiClient { get; private set; }
 
-        private readonly ConnectService _connectService;
-
-        public ConnectUser ConnectUser { get; private set; }
-
         public ConnectionManager(ILogger logger,
             ICredentialProvider credentialProvider,
             INetworkConnection networkConnectivity,
@@ -60,9 +50,7 @@ namespace Jellyfin.ApiClient
             string applicationVersion,
             IDevice device,
             ClientCapabilities clientCapabilities,
-            ICryptographyProvider cryptographyProvider,
-            Func<IClientWebSocket> webSocketFactory = null,
-            ILocalAssetManager localAssetManager = null)
+            Func<IClientWebSocket> webSocketFactory = null)
         {
             _credentialProvider = credentialProvider;
             _networkConnectivity = networkConnectivity;
@@ -71,8 +59,6 @@ namespace Jellyfin.ApiClient
             _httpClient = AsyncHttpClientFactory.Create(logger);
             ClientCapabilities = clientCapabilities;
             _webSocketFactory = webSocketFactory;
-            _cryptographyProvider = cryptographyProvider;
-            _localAssetManager = localAssetManager;
 
             Device = device;
             ApplicationVersion = applicationVersion;
@@ -81,30 +67,26 @@ namespace Jellyfin.ApiClient
             SaveLocalCredentials = true;
 
             var jsonSerializer = new NewtonsoftJsonSerializer();
-            _connectService = new ConnectService(jsonSerializer, _logger, _httpClient, _cryptographyProvider, applicationName, applicationVersion);
         }
 
-        public IJsonSerializer JsonSerializer
-        {
-            get { return _connectService.JsonSerializer; }
-            set { _connectService.JsonSerializer = value; }
-        }
+        public IJsonSerializer JsonSerializer = new NewtonsoftJsonSerializer();
 
         public bool SaveLocalCredentials { get; set; }
 
-        private IApiClient GetOrAddApiClient(ServerInfo server, ConnectionMode connectionMode)
+        private IApiClient GetOrAddApiClient(ServerInfo server)
         {
             IApiClient apiClient;
 
             if (!ApiClients.TryGetValue(server.Id, out apiClient))
             {
-                var address = server.GetAddress(connectionMode);
+                var address = server.Address;
 
-                apiClient = new ApiClient(_logger, address, ApplicationName, Device, ApplicationVersion, _cryptographyProvider, _localAssetManager)
+                apiClient = new ApiClient(_logger, address, ApplicationName, Device, ApplicationVersion)
                 {
                     JsonSerializer = JsonSerializer,
-                    OnAuthenticated = ApiClientOnAuthenticated
                 };
+
+                apiClient.OnAuthenticated += ApiClientOnAuthenticated;
 
                 ApiClients[server.Id] = apiClient;
             }
@@ -121,9 +103,9 @@ namespace Jellyfin.ApiClient
             return apiClient;
         }
 
-        private Task ApiClientOnAuthenticated(IApiClient apiClient, AuthenticationResult result)
+        private async void ApiClientOnAuthenticated(object apiClient, GenericEventArgs<AuthenticationResult> result)
         {
-            return OnAuthenticated(apiClient, result, new ConnectionOptions(), SaveLocalCredentials);
+            await OnAuthenticated((IApiClient)apiClient, result.Argument, new ConnectionOptions(), SaveLocalCredentials);
         }
 
         private async void AfterConnected(IApiClient apiClient, ConnectionOptions options)
@@ -136,7 +118,7 @@ namespace Jellyfin.ApiClient
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorException("Error reporting capabilities", ex);
+                    _logger.LogError("Error reporting capabilities", ex);
                 }
             }
 
@@ -153,7 +135,7 @@ namespace Jellyfin.ApiClient
         {
             var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
 
-            _logger.Debug("{0} servers in saved credentials", credentials.Servers.Count);
+            _logger.LogDebug("{0} servers in saved credentials", credentials.Servers.Count);
 
             if (_networkConnectivity.GetNetworkStatus().GetIsAnyLocalNetworkAvailable())
             {
@@ -163,54 +145,9 @@ namespace Jellyfin.ApiClient
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(credentials.ConnectAccessToken))
-            {
-                await EnsureConnectUser(credentials, cancellationToken).ConfigureAwait(false);
-
-                var connectServers = await GetConnectServers(credentials.ConnectUserId, credentials.ConnectAccessToken, cancellationToken)
-                            .ConfigureAwait(false);
-
-                foreach (var server in connectServers)
-                {
-                    credentials.AddOrUpdateServer(server);
-                }
-
-                // Remove old servers
-                var newServerList = credentials.Servers
-                    .Where(i => string.IsNullOrWhiteSpace(i.ExchangeToken) ||
-                        connectServers.Any(c => string.Equals(c.Id, i.Id, StringComparison.OrdinalIgnoreCase)));
-
-                credentials.Servers = newServerList.ToList();
-            }
-
             await _credentialProvider.SaveServerCredentials(credentials).ConfigureAwait(false);
 
             return credentials.Servers.OrderByDescending(i => i.DateLastAccessed).ToList();
-        }
-
-        private async Task<List<ServerInfo>> GetConnectServers(string userId, string accessToken, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var servers = await _connectService.GetServers(userId, accessToken, cancellationToken).ConfigureAwait(false);
-
-                _logger.Debug("User has {0} connect servers", servers.Length);
-
-                return servers.Select(i => new ServerInfo
-                {
-                    ExchangeToken = i.AccessKey,
-                    Id = i.SystemId,
-                    Name = i.Name,
-                    RemoteAddress = i.Url,
-                    LocalAddress = i.LocalAddress,
-                    UserLinkType = string.Equals(i.UserType, "guest", StringComparison.OrdinalIgnoreCase) ? UserLinkType.Guest : UserLinkType.LinkedUser
-
-                }).ToList();
-            }
-            catch
-            {
-                return new List<ServerInfo>();
-            }
         }
 
         private async Task<List<ServerInfo>> FindServers(CancellationToken cancellationToken)
@@ -223,13 +160,13 @@ namespace Jellyfin.ApiClient
             }
             catch (OperationCanceledException)
             {
-                _logger.Debug("No servers found via local discovery.");
+                _logger.LogDebug("No servers found via local discovery.");
 
                 servers = new List<ServerDiscoveryInfo>();
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error discovering servers.", ex);
+                _logger.LogError("Error discovering servers.", ex);
 
                 servers = new List<ServerDiscoveryInfo>();
             }
@@ -237,7 +174,7 @@ namespace Jellyfin.ApiClient
             return servers.Select(i => new ServerInfo
             {
                 Id = i.Id,
-                LocalAddress = ConvertEndpointAddressToManualAddress(i) ?? i.Address,
+                Address = ConvertEndpointAddressToManualAddress(i) ?? i.Address,
                 Name = i.Name
             })
             .ToList();
@@ -285,15 +222,13 @@ namespace Jellyfin.ApiClient
 
             if (servers.Count == 1)
             {
-                _logger.Debug("1 server in the list.");
+                _logger.LogDebug("1 server in the list.");
 
                 var result = await Connect(servers[0], cancellationToken).ConfigureAwait(false);
 
                 if (result.State == ConnectionState.Unavailable)
                 {
-                    result.State = result.ConnectUser == null ?
-                        ConnectionState.ConnectSignIn :
-                        ConnectionState.ServerSelection;
+                    result.State = ConnectionState.ServerSelection;
                 }
 
                 return result;
@@ -313,13 +248,10 @@ namespace Jellyfin.ApiClient
 
             var finalResult = new ConnectionResult
             {
-                Servers = servers,
-                ConnectUser = ConnectUser
+                Servers = servers
             };
 
-            finalResult.State = servers.Count == 0 && finalResult.ConnectUser == null ?
-                ConnectionState.ConnectSignIn :
-                ConnectionState.ServerSelection;
+            finalResult.State = ConnectionState.ServerSelection;
 
             return finalResult;
         }
@@ -334,124 +266,35 @@ namespace Jellyfin.ApiClient
 
         public async Task<ConnectionResult> Connect(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var result = new ConnectionResult
+
+            string address = server.Address;
+            if (string.IsNullOrEmpty(address))
             {
-                State = ConnectionState.Unavailable
-            };
-
-            PublicSystemInfo systemInfo = null;
-            var connectionMode = ConnectionMode.Manual;
-
-            var tests = new[] { ConnectionMode.Manual, ConnectionMode.Local, ConnectionMode.Remote }.ToList();
-
-            // If we've connected to the server before, try to optimize by starting with the last used connection mode
-            if (server.LastConnectionMode.HasValue)
-            {
-                tests.Remove(server.LastConnectionMode.Value);
-                tests.Insert(0, server.LastConnectionMode.Value);
+                // TODO: on failed connection
+                return new ConnectionResult { State = ConnectionState.Unavailable };
             }
 
-            var isLocalNetworkAvailable = _networkConnectivity.GetNetworkStatus().GetIsAnyLocalNetworkAvailable();
+            int timeout = 100;
 
-            // Kick off wake on lan on a separate thread (if applicable)
-            var sendWakeOnLan = server.WakeOnLanInfos.Count > 0 && isLocalNetworkAvailable;
+            await TryConnect(address, timeout, cancellationToken);
 
-            var wakeOnLanTask = sendWakeOnLan ?
-                Task.Run(() => WakeServer(server, cancellationToken), cancellationToken) :
-                Task.FromResult(true);
-
-            var wakeOnLanSendTime = DateTime.Now;
-
-            foreach (var mode in tests)
-            {
-                _logger.Debug("Attempting to connect to server {0}. ConnectionMode: {1}", server.Name, mode.ToString());
-
-                if (mode == ConnectionMode.Local)
-                {
-                    // Try connect locally if there's a local address,
-                    // and we're either on localhost or the device has a local connection
-                    if (!string.IsNullOrEmpty(server.LocalAddress) && isLocalNetworkAvailable)
-                    {
-                        // Try to connect to the local address
-                        systemInfo = await TryConnect(server.LocalAddress, 8000, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-                else if (mode == ConnectionMode.Manual)
-                {
-                    // Try manual address if there is one, but only if it's different from the local/remote addresses
-                    if (!string.IsNullOrEmpty(server.ManualAddress)
-                        && !string.Equals(server.ManualAddress, server.LocalAddress, StringComparison.OrdinalIgnoreCase)
-                        && !string.Equals(server.ManualAddress, server.RemoteAddress, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Try to connect to the local address
-                        systemInfo = await TryConnect(server.ManualAddress, 15000, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-                else if (mode == ConnectionMode.Remote)
-                {
-                    if (!string.IsNullOrEmpty(server.RemoteAddress))
-                    {
-                        systemInfo = await TryConnect(server.RemoteAddress, 15000, cancellationToken).ConfigureAwait(false);
-                    }
-                }
-
-                if (systemInfo != null)
-                {
-                    connectionMode = mode;
-                    break;
-                }
-            }
-
-            if (systemInfo == null && !string.IsNullOrEmpty(server.LocalAddress) && isLocalNetworkAvailable && sendWakeOnLan)
-            {
-                await wakeOnLanTask.ConfigureAwait(false);
-
-                // After wake on lan finishes, make sure at least 10 seconds have elapsed since the time it was first sent out
-                var waitTime = TimeSpan.FromSeconds(10).TotalMilliseconds -
-                               (DateTime.Now - wakeOnLanSendTime).TotalMilliseconds;
-
-                if (waitTime > 0)
-                {
-                    await Task.Delay(Convert.ToInt32(waitTime, CultureInfo.InvariantCulture), cancellationToken).ConfigureAwait(false);
-                }
-
-                systemInfo = await TryConnect(server.LocalAddress, 15000, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (systemInfo != null)
-            {
-                await OnSuccessfulConnection(server, options, systemInfo, result, connectionMode, cancellationToken)
-                        .ConfigureAwait(false);
-            }
-
-            result.ConnectUser = ConnectUser;
-            return result;
+            // TODO: this isn't right
+            return new ConnectionResult { State = ConnectionState.Unavailable };
         }
 
         private async Task OnSuccessfulConnection(ServerInfo server,
             ConnectionOptions options,
             PublicSystemInfo systemInfo,
             ConnectionResult result,
-            ConnectionMode connectionMode,
             CancellationToken cancellationToken)
         {
             server.ImportInfo(systemInfo);
 
             var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
 
-            if (!string.IsNullOrWhiteSpace(credentials.ConnectAccessToken))
-            {
-                await EnsureConnectUser(credentials, cancellationToken).ConfigureAwait(false);
-
-                if (!string.IsNullOrWhiteSpace(server.ExchangeToken))
-                {
-                    await AddAuthenticationInfoFromConnect(server, connectionMode, credentials, cancellationToken).ConfigureAwait(false);
-                }
-            }
-
             if (!string.IsNullOrWhiteSpace(server.AccessToken))
             {
-                await ValidateAuthentication(server, connectionMode, options, cancellationToken).ConfigureAwait(false);
+                await ValidateAuthentication(server, options, cancellationToken).ConfigureAwait(false);
             }
 
             credentials.AddOrUpdateServer(server);
@@ -460,16 +303,15 @@ namespace Jellyfin.ApiClient
             {
                 server.DateLastAccessed = DateTime.UtcNow;
             }
-            server.LastConnectionMode = connectionMode;
 
             await _credentialProvider.SaveServerCredentials(credentials).ConfigureAwait(false);
 
-            result.ApiClient = GetOrAddApiClient(server, connectionMode);
+            result.ApiClient = GetOrAddApiClient(server);
             result.State = string.IsNullOrEmpty(server.AccessToken) ?
                 ConnectionState.ServerSignIn :
                 ConnectionState.SignedIn;
 
-            ((ApiClient)result.ApiClient).EnableAutomaticNetworking(server, connectionMode, _networkConnectivity);
+            ((ApiClient)result.ApiClient).EnableAutomaticNetworking(server, _networkConnectivity);
 
             if (result.State == ConnectionState.SignedIn)
             {
@@ -480,10 +322,7 @@ namespace Jellyfin.ApiClient
 
             result.Servers.Add(server);
 
-            if (Connected != null)
-            {
-                Connected(this, new GenericEventArgs<ConnectionResult>(result));
-            }
+            Connected?.Invoke(this, new GenericEventArgs<ConnectionResult>(result));
         }
 
         public Task<ConnectionResult> Connect(IApiClient apiClient, CancellationToken cancellationToken = default(CancellationToken))
@@ -492,94 +331,11 @@ namespace Jellyfin.ApiClient
             return Connect(client.ServerInfo, cancellationToken);
         }
 
-        private async Task AddAuthenticationInfoFromConnect(ServerInfo server,
-            ConnectionMode connectionMode,
-            ServerCredentials credentials,
-            CancellationToken cancellationToken)
+        private async Task ValidateAuthentication(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(credentials.ConnectUserId))
-            {
-                throw new ArgumentException("server");
-            }
+            _logger.LogDebug("Validating saved authentication");
 
-            if (string.IsNullOrWhiteSpace(server.ExchangeToken))
-            {
-                throw new ArgumentException("server");
-            }
-
-            _logger.Debug("Adding authentication info from Connect");
-
-            var url = server.GetAddress(connectionMode);
-
-            url += "/emby/Connect/Exchange?format=json&ConnectUserId=" + credentials.ConnectUserId;
-
-            var headers = new HttpHeaders();
-            headers.SetAccessToken(server.ExchangeToken);
-            headers["X-Emby-Authorization"] = "MediaBrowser Client=\"" + ApplicationName + "\", Device=\"" + Device.DeviceName + "\", DeviceId=\"" + Device.DeviceId + "\", Version=\"" + ApplicationVersion + "\"";
-
-            try
-            {
-                using (var stream = await _httpClient.SendAsync(new HttpRequest
-                {
-                    CancellationToken = cancellationToken,
-                    Method = "GET",
-                    RequestHeaders = headers,
-                    Url = url
-
-                }).ConfigureAwait(false))
-                {
-                    var auth = JsonSerializer.DeserializeFromStream<ConnectAuthenticationExchangeResult>(stream);
-
-                    server.UserId = auth.LocalUserId;
-                    server.AccessToken = auth.AccessToken;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                // Already logged at a lower level
-
-                server.UserId = null;
-                server.AccessToken = null;
-            }
-        }
-
-        private async Task EnsureConnectUser(ServerCredentials credentials, CancellationToken cancellationToken)
-        {
-            if (ConnectUser != null && string.Equals(ConnectUser.Id, credentials.ConnectUserId, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            ConnectUser = null;
-
-            if (!string.IsNullOrWhiteSpace(credentials.ConnectUserId) && !string.IsNullOrWhiteSpace(credentials.ConnectAccessToken))
-            {
-                try
-                {
-                    ConnectUser = await _connectService.GetConnectUser(new ConnectUserQuery
-                    {
-                        Id = credentials.ConnectUserId
-
-                    }, credentials.ConnectAccessToken, cancellationToken).ConfigureAwait(false);
-
-                    OnConnectUserSignIn(ConnectUser);
-                }
-                catch
-                {
-                    // Already logged at lower levels
-                }
-            }
-        }
-
-        private async Task ValidateAuthentication(ServerInfo server, ConnectionMode connectionMode, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            _logger.Debug("Validating saved authentication");
-
-            var url = server.GetAddress(connectionMode);
+            var url = server.Address;
 
             var headers = new HttpHeaders();
             headers.SetAccessToken(server.AccessToken);
@@ -601,7 +357,7 @@ namespace Jellyfin.ApiClient
                     server.ImportInfo(systemInfo);
                 }
 
-                if (!string.IsNullOrEmpty(server.UserId))
+                if (server.UserId != Guid.Empty)
                 {
                     request.Url = url + "/mediabrowser/users/" + server.UserId + "?format=json";
 
@@ -617,11 +373,11 @@ namespace Jellyfin.ApiClient
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Already logged at a lower level
 
-                server.UserId = null;
+                server.UserId = Guid.Empty;
                 server.AccessToken = null;
             }
         }
@@ -648,7 +404,7 @@ namespace Jellyfin.ApiClient
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Already logged at a lower level
 
@@ -693,7 +449,7 @@ namespace Jellyfin.ApiClient
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error sending wake on lan command", ex);
+                _logger.LogError("Error sending wake on lan command", ex);
             }
         }
 
@@ -725,15 +481,13 @@ namespace Jellyfin.ApiClient
             {
                 return new ConnectionResult
                 {
-                    State = ConnectionState.Unavailable,
-                    ConnectUser = ConnectUser
+                    State = ConnectionState.Unavailable
                 };
             }
 
             var server = new ServerInfo
             {
-                ManualAddress = address,
-                LastConnectionMode = ConnectionMode.Manual
+                Address = address
             };
 
             server.ImportInfo(publicInfo);
@@ -777,7 +531,7 @@ namespace Jellyfin.ApiClient
             }
             else
             {
-                server.UserId = null;
+                server.UserId = Guid.Empty;
                 server.AccessToken = null;
             }
 
@@ -809,16 +563,6 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        private void OnConnectUserSignIn(ConnectUser user)
-        {
-            ConnectUser = user;
-
-            if (ConnectUserSignIn != null)
-            {
-                ConnectUserSignIn(this, new GenericEventArgs<ConnectUser>(ConnectUser));
-            }
-        }
-
         public async Task Logout()
         {
             foreach (var client in ApiClients.Values.ToList())
@@ -832,68 +576,15 @@ namespace Jellyfin.ApiClient
 
             var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
 
-            var servers = credentials.Servers
-                .Where(i => !i.UserLinkType.HasValue || i.UserLinkType.Value != UserLinkType.Guest)
-                .ToList();
+            var servers = credentials.Servers.ToList();
 
             foreach (var server in servers)
             {
                 server.AccessToken = null;
-                server.UserId = null;
-                server.ExchangeToken = null;
+                server.UserId = Guid.Empty;
             }
 
             credentials.Servers = servers;
-            credentials.ConnectAccessToken = null;
-            credentials.ConnectUserId = null;
-
-            await _credentialProvider.SaveServerCredentials(credentials).ConfigureAwait(false);
-
-            if (ConnectUser != null)
-            {
-                ConnectUser = null;
-
-                if (ConnectUserSignOut != null)
-                {
-                    ConnectUserSignOut(this, EventArgs.Empty);
-                }
-            }
-        }
-
-        public async Task LoginToConnect(string username, string password)
-        {
-            var result = await _connectService.Authenticate(username, password).ConfigureAwait(false);
-
-            var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
-
-            credentials.ConnectAccessToken = result.AccessToken;
-            credentials.ConnectUserId = result.User.Id;
-
-            await _credentialProvider.SaveServerCredentials(credentials).ConfigureAwait(false);
-
-            OnConnectUserSignIn(result.User);
-        }
-
-        public Task<PinCreationResult> CreatePin()
-        {
-            return _connectService.CreatePin(Device.DeviceId);
-        }
-
-        public Task<PinStatusResult> GetPinStatus(PinCreationResult pin)
-        {
-            return _connectService.GetPinStatus(pin);
-        }
-
-        public async Task ExchangePin(PinCreationResult pin)
-        {
-            var result = await _connectService.ExchangePin(pin);
-
-            var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
-
-            credentials.ConnectAccessToken = result.AccessToken;
-            credentials.ConnectUserId = result.UserId;
-
-            await EnsureConnectUser(credentials, CancellationToken.None).ConfigureAwait(false);
 
             await _credentialProvider.SaveServerCredentials(credentials).ConfigureAwait(false);
         }
@@ -902,12 +593,7 @@ namespace Jellyfin.ApiClient
         {
             var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
 
-            return credentials.Servers.FirstOrDefault(i => string.Equals(i.Id, id, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public Task<ConnectSignupResponse> SignupForConnect(string email, string username, string password, CancellationToken cancellationToken)
-        {
-            return _connectService.SignupForConnect(email, username, password);
+            return credentials.Servers.FirstOrDefault(i => i.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,7 +36,7 @@ namespace Jellyfin.ApiClient.Net
         {
             var duration = DateTime.Now - requestTime;
 
-            Logger.Debug("Received {0} status code after {1} ms from {2}: {3}", (int)statusCode, duration.TotalMilliseconds, verb, url);
+            Logger.LogDebug("Received {0} status code after {1} ms from {2}: {3}", (int)statusCode, duration.TotalMilliseconds, verb, url);
 
             if (HttpResponseReceived != null)
             {
@@ -51,7 +51,7 @@ namespace Jellyfin.ApiClient.Net
                 }
                 catch (Exception ex)
                 {
-                    Logger.ErrorException("Error in HttpResponseReceived event handler", ex);
+                    Logger.LogError("Error in HttpResponseReceived event handler", ex);
                 }
             }
         }
@@ -105,7 +105,7 @@ namespace Jellyfin.ApiClient.Net
                 }
             }
 
-            Logger.Debug(options.Method + " {0}", options.Url);
+            Logger.LogDebug(options.Method + " {0}", options.Url);
 
             var requestTime = DateTime.Now;
 
@@ -207,7 +207,7 @@ namespace Jellyfin.ApiClient.Net
 
             if (webException != null)
             {
-                Logger.ErrorException("Error getting response from " + options.Url, ex);
+                Logger.LogError("Error getting response from " + options.Url, ex);
 
                 var httpException = new HttpException(ex.Message, ex);
                 
@@ -224,7 +224,7 @@ namespace Jellyfin.ApiClient.Net
             var timeoutException = ex as TimeoutException ?? ex.InnerException as TimeoutException;
             if (timeoutException != null)
             {
-                Logger.ErrorException("Request timeout to " + options.Url, ex);
+                Logger.LogError("Request timeout to " + options.Url, ex);
                 
                 var httpException = new HttpException(ex.Message, ex)
                 {
@@ -234,7 +234,7 @@ namespace Jellyfin.ApiClient.Net
                 return httpException;
             }
 
-            Logger.ErrorException("Error getting response from " + options.Url, ex);
+            Logger.LogError("Error getting response from " + options.Url, ex);
             return ex;
         }
 
@@ -266,7 +266,7 @@ namespace Jellyfin.ApiClient.Net
             {
                 var msg = string.Format("Connection to {0} timed out", url);
 
-                Logger.Error(msg);
+                Logger.LogError(msg);
 
                 // Throw an HttpException so that the caller doesn't think it was cancelled by user code
                 return new HttpException(msg, exception)

@@ -3,9 +3,9 @@ using Jellyfin.ApiClient.Net;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.LiveTv;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Linq;
@@ -99,7 +99,7 @@ namespace Jellyfin.ApiClient
 
             if (!keepExistingAuth)
             {
-                SetAuthenticationInfo(null, null);
+                SetAuthenticationInfo(null, Guid.Empty);
             }
         }
 
@@ -144,7 +144,7 @@ namespace Jellyfin.ApiClient
         /// Gets or sets the current user id.
         /// </summary>
         /// <value>The current user id.</value>
-        public string CurrentUserId { get; private set; }
+        public Guid CurrentUserId { get; private set; }
 
         /// <summary>
         /// Gets the current api url based on hostname and port.
@@ -182,7 +182,7 @@ namespace Jellyfin.ApiClient
 
                 var header = string.Format("Client=\"{0}\", DeviceId=\"{1}\", Device=\"{2}\", Version=\"{3}\"", ClientName, DeviceId, DeviceName, ApplicationVersion);
 
-                if (!string.IsNullOrEmpty(CurrentUserId))
+                if (CurrentUserId != Guid.Empty)
                 {
                     header += string.Format(", UserId=\"{0}\"", CurrentUserId);
                 }
@@ -202,7 +202,7 @@ namespace Jellyfin.ApiClient
             return GetApiUrl(handler, new QueryStringDictionary());
         }
 
-        public void SetAuthenticationInfo(string accessToken, string userId)
+        public void SetAuthenticationInfo(string accessToken, Guid userId)
         {
             CurrentUserId = userId;
             AccessToken = accessToken;
@@ -211,14 +211,14 @@ namespace Jellyfin.ApiClient
 
         public void ClearAuthenticationInfo()
         {
-            CurrentUserId = null;
+            CurrentUserId = Guid.Empty;
             AccessToken = null;
             ResetHttpHeaders();
         }
 
         public void SetAuthenticationInfo(string accessToken)
         {
-            CurrentUserId = null;
+            CurrentUserId = Guid.Empty;
             AccessToken = accessToken;
             ResetHttpHeaders();
         }
@@ -447,7 +447,7 @@ namespace Jellyfin.ApiClient
 
             dict.AddIfNotNullOrEmpty("SeriesId", query.SeriesId);
 
-            dict.Add("UserId", query.UserId);
+            dict.Add("UserId", query.UserId.ToString());
 
             dict.AddIfNotNull("EnableImages", query.EnableImages);
             if (query.EnableImageTypes != null)
@@ -677,7 +677,7 @@ namespace Jellyfin.ApiClient
 
             options.Tag = GetImageTag(item, options);
 
-            return GetImageUrl(item.Id, options);
+            return GetImageUrl(item, options);
         }
 
         public string GetImageUrl(ChannelInfoDto item, ImageOptions options)
@@ -737,7 +737,7 @@ namespace Jellyfin.ApiClient
 
             options.Tag = user.PrimaryImageTag;
 
-            return GetUserImageUrl(user.Id, options);
+            return GetUserImageUrl(user, options);
         }
 
         /// <summary>
@@ -840,7 +840,7 @@ namespace Jellyfin.ApiClient
             }
             else
             {
-                backdropItemId = item.Id;
+                backdropItemId = item.Id.ToString();
                 backdropImageTags = item.BackdropImageTags;
             }
 
@@ -883,7 +883,7 @@ namespace Jellyfin.ApiClient
 
             options.ImageType = ImageType.Logo;
 
-            var logoItemId = HasLogo(item) ? item.Id : item.ParentLogoItemId;
+            var logoItemId = HasLogo(item) ? item.Id.ToString() : item.ParentLogoItemId;
             var imageTag = HasLogo(item) ? item.ImageTags[ImageType.Logo] : item.ParentLogoImageTag;
 
             if (!string.IsNullOrEmpty(logoItemId))
@@ -910,7 +910,7 @@ namespace Jellyfin.ApiClient
 
             options.ImageType = ImageType.Thumb;
 
-            var itemId = HasThumb(item) ? item.Id : item.SeriesThumbImageTag != null ? item.SeriesId : item.ParentThumbItemId;
+            var itemId = HasThumb(item) ? item.Id.ToString() : item.SeriesThumbImageTag != null ? item.SeriesId.ToString() : item.ParentThumbItemId;
             var imageTag = HasThumb(item) ? item.ImageTags[ImageType.Thumb] : item.SeriesThumbImageTag ?? item.ParentThumbImageTag;
 
             if (!string.IsNullOrEmpty(itemId))
@@ -944,7 +944,7 @@ namespace Jellyfin.ApiClient
 
             options.ImageType = ImageType.Art;
 
-            var artItemId = HasArtImage(item) ? item.Id : item.ParentArtItemId;
+            var artItemId = HasArtImage(item) ? item.Id.ToString() : item.ParentArtItemId;
             var imageTag = HasArtImage(item) ? item.ImageTags[ImageType.Art] : item.ParentArtImageTag;
 
             if (!string.IsNullOrEmpty(artItemId))

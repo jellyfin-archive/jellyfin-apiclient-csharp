@@ -1,7 +1,6 @@
-﻿using Jellyfin.ApiClient.Cryptography;
-using Jellyfin.ApiClient.Data;
-using Jellyfin.ApiClient.Model;
+﻿using Jellyfin.ApiClient.Model;
 using Jellyfin.ApiClient.Net;
+using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Channels;
 using MediaBrowser.Model.Configuration;
@@ -11,7 +10,6 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Events;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.LiveTv;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Notifications;
@@ -24,6 +22,7 @@ using MediaBrowser.Model.Sync;
 using MediaBrowser.Model.System;
 using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Users;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -33,6 +32,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 namespace Jellyfin.ApiClient
 {
     /// <summary>
@@ -42,6 +42,7 @@ namespace Jellyfin.ApiClient
     {
         public event EventHandler<GenericEventArgs<RemoteLogoutReason>> RemoteLoggedOut;
         public event EventHandler<GenericEventArgs<AuthenticationResult>> Authenticated;
+        public event EventHandler<GenericEventArgs<AuthenticationResult>> OnAuthenticated;
 
         /// <summary>
         /// Gets the HTTP client.
@@ -49,24 +50,18 @@ namespace Jellyfin.ApiClient
         /// <value>The HTTP client.</value>
         protected IAsyncHttpClient HttpClient { get; private set; }
 
-        private readonly ICryptographyProvider _cryptographyProvider;
-        private readonly ILocalAssetManager _localAssetManager = null;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiClient" /> class.
         /// </summary>
         /// <param name="logger">The logger.</param>
         /// <param name="serverAddress">The server address.</param>
         /// <param name="accessToken">The access token.</param>
-        /// <param name="cryptographyProvider">The cryptography provider.</param>
         public ApiClient(ILogger logger,
             string serverAddress,
-            string accessToken,
-            ICryptographyProvider cryptographyProvider)
+            string accessToken)
             : base(logger, new NewtonsoftJsonSerializer(), serverAddress, accessToken)
         {
             CreateHttpClient(logger);
-            _cryptographyProvider = cryptographyProvider;
 
             ResetHttpHeaders();
         }
@@ -79,41 +74,16 @@ namespace Jellyfin.ApiClient
         /// <param name="clientName">Name of the client.</param>
         /// <param name="device">The device.</param>
         /// <param name="applicationVersion">The application version.</param>
-        /// <param name="cryptographyProvider">The cryptography provider.</param>
         public ApiClient(ILogger logger,
             string serverAddress,
             string clientName,
             IDevice device,
-            string applicationVersion,
-            ICryptographyProvider cryptographyProvider)
+            string applicationVersion)
             : base(logger, new NewtonsoftJsonSerializer(), serverAddress, clientName, device, applicationVersion)
         {
             CreateHttpClient(logger);
-            _cryptographyProvider = cryptographyProvider;
 
             ResetHttpHeaders();
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ApiClient" /> class.
-        /// </summary>
-        /// <param name="logger">The logger.</param>
-        /// <param name="serverAddress">The server address.</param>
-        /// <param name="clientName">Name of the client.</param>
-        /// <param name="device">The device.</param>
-        /// <param name="applicationVersion">The application version.</param>
-        /// <param name="cryptographyProvider">The cryptography provider.</param>
-        /// <param name="localAssetManager">The local asset manager.</param>
-        public ApiClient(ILogger logger,
-            string serverAddress,
-            string clientName,
-            IDevice device,
-            string applicationVersion,
-            ICryptographyProvider cryptographyProvider,
-            ILocalAssetManager localAssetManager)
-            : this(logger, serverAddress, clientName, device, applicationVersion, cryptographyProvider)
-        {
-            _localAssetManager = localAssetManager;
         }
 
         private void CreateHttpClient(ILogger logger)
@@ -126,23 +96,18 @@ namespace Jellyfin.ApiClient
         {
             if (e.StatusCode == HttpStatusCode.Unauthorized)
             {
-                if (RemoteLoggedOut != null)
-                {
-                    RemoteLoggedOut(this, new GenericEventArgs<RemoteLogoutReason>());
-                }
+                RemoteLoggedOut?.Invoke(this, new GenericEventArgs<RemoteLogoutReason>());
             }
         }
 
-        private ConnectionMode ConnectionMode { get; set; }
         internal ServerInfo ServerInfo { get; set; }
         private INetworkConnection NetworkConnection { get; set; }
 
-        public void EnableAutomaticNetworking(ServerInfo info, ConnectionMode initialMode, INetworkConnection networkConnection)
+        public void EnableAutomaticNetworking(ServerInfo info, INetworkConnection networkConnection)
         {
             NetworkConnection = networkConnection;
-            ConnectionMode = initialMode;
             ServerInfo = info;
-            ServerAddress = info.GetAddress(initialMode);
+            ServerAddress = info.Address;
         }
 
         private async Task<Stream> SendAsync(HttpRequest request, bool enableFailover = true)
@@ -153,7 +118,6 @@ namespace Jellyfin.ApiClient
                 return await HttpClient.SendAsync(request).ConfigureAwait(false);
             }
 
-            var initialConnectionMode = ConnectionMode;
             var originalRequestTime = DateTime.UtcNow;
             Exception timeoutException;
 
@@ -173,7 +137,7 @@ namespace Jellyfin.ApiClient
 
             try
             {
-                await ValidateConnection(originalRequestTime, initialConnectionMode, request.CancellationToken).ConfigureAwait(false);
+                await ValidateConnection(originalRequestTime, request.CancellationToken).ConfigureAwait(false);
             }
             catch
             {
@@ -182,7 +146,7 @@ namespace Jellyfin.ApiClient
                 throw timeoutException;
             }
 
-            request.Url = ReplaceServerAddress(request.Url, initialConnectionMode);
+            request.Url = ReplaceServerAddress(request.Url);
 
             return await HttpClient.SendAsync(request).ConfigureAwait(false);
         }
@@ -191,7 +155,7 @@ namespace Jellyfin.ApiClient
 
         private DateTime _lastConnectionValidationTime = DateTime.MinValue;
 
-        private async Task ValidateConnection(DateTime originalRequestTime, ConnectionMode initialConnectionMode, CancellationToken cancellationToken)
+        private async Task ValidateConnection(DateTime originalRequestTime, CancellationToken cancellationToken)
         {
             await _validateConnectionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -199,7 +163,7 @@ namespace Jellyfin.ApiClient
             {
                 if (originalRequestTime > _lastConnectionValidationTime)
                 {
-                    await ValidateConnectionInternal(initialConnectionMode, cancellationToken).ConfigureAwait(false);
+                    await ValidateConnectionInternal(cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
@@ -208,9 +172,9 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        private async Task ValidateConnectionInternal(ConnectionMode initialConnectionMode, CancellationToken cancellationToken)
+        private async Task ValidateConnectionInternal(CancellationToken cancellationToken)
         {
-            Logger.Debug("Connection to server dropped. Attempting to reconnect.");
+            Logger.LogDebug("Connection to server dropped. Attempting to reconnect.");
 
             const int maxWaitMs = 10000;
             const int waitIntervalMs = 100;
@@ -230,10 +194,9 @@ namespace Jellyfin.ApiClient
                 networkStatus = NetworkConnection.GetNetworkStatus();
             }
 
-            var urlList = new List<Tuple<string, ConnectionMode>>
+            var urlList = new List<string>
 			{
-				new Tuple<string,ConnectionMode>(ServerInfo.LocalAddress, ConnectionMode.Local),
-				new Tuple<string,ConnectionMode>(ServerInfo.RemoteAddress, ConnectionMode.Remote)
+				ServerInfo.Address,
 			};
 
             if (!networkStatus.GetIsAnyLocalNetworkAvailable())
@@ -241,22 +204,21 @@ namespace Jellyfin.ApiClient
                 urlList.Reverse();
             }
 
-            if (!string.IsNullOrEmpty(ServerInfo.ManualAddress))
+            if (!string.IsNullOrEmpty(ServerInfo.Address))
             {
-                if (!string.Equals(ServerInfo.ManualAddress, ServerInfo.LocalAddress, StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(ServerInfo.ManualAddress, ServerInfo.RemoteAddress, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(ServerInfo.Address, ServerInfo.Address, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(ServerInfo.Address, ServerInfo.Address, StringComparison.OrdinalIgnoreCase))
                 {
-                    urlList.Insert(0, new Tuple<string, ConnectionMode>(ServerInfo.ManualAddress, ConnectionMode.Manual));
+                    urlList.Insert(0, ServerInfo.Address);
                 }
             }
 
             foreach (var url in urlList)
             {
-                var connected = await TryConnect(url.Item1, cancellationToken).ConfigureAwait(false);
+                var connected = await TryConnect(url, cancellationToken).ConfigureAwait(false);
 
                 if (connected)
                 {
-                    ConnectionMode = url.Item2;
                     break;
                 }
             }
@@ -285,15 +247,15 @@ namespace Jellyfin.ApiClient
                     return true;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
-        private string ReplaceServerAddress(string url, ConnectionMode initialConnectionMode)
+        private string ReplaceServerAddress(string url)
         {
-            var baseUrl = ServerInfo.GetAddress(ConnectionMode);
+            var baseUrl = ServerInfo.Address;
 
             var index = url.IndexOf("/mediabrowser", StringComparison.OrdinalIgnoreCase);
 
@@ -303,8 +265,6 @@ namespace Jellyfin.ApiClient
             }
 
             return url;
-
-            //return url.Replace(ServerInfo.GetAddress(initialConnectionMode), ServerInfo.GetAddress(ConnectionMode), StringComparison.OrdinalIgnoreCase);
         }
 
         public Task<Stream> GetStream(string url, CancellationToken cancellationToken = default(CancellationToken))
@@ -1053,7 +1013,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("info");
             }
 
-            Logger.Debug("ReportPlaybackStart: Item {0}", info.ItemId);
+            Logger.LogDebug("ReportPlaybackStart: Item {0}", info.ItemId);
 
             var url = GetApiUrl("Sessions/Playing");
 
@@ -1151,7 +1111,7 @@ namespace Jellyfin.ApiClient
             }
 
             var dict = new QueryStringDictionary();
-            dict.Add("ItemIds", request.ItemIds);
+            dict.Add("ItemIds", request.ItemIds.Select(o => o.ToString()).ToList());
             dict.AddIfNotNull("StartPositionTicks", request.StartPositionTicks);
             dict.Add("PlayCommand", request.PlayCommand.ToString());
 
@@ -1172,7 +1132,7 @@ namespace Jellyfin.ApiClient
 
             if (command.TimeoutMs.HasValue)
             {
-                cmd.Arguments["Timeout"] = command.TimeoutMs.Value.ToString(CultureInfo.InvariantCulture);
+                cmd.Arguments["Timeout"] = command.TimeoutMs?.ToString();
             }
 
             return SendCommandAsync(sessionId, cmd);
@@ -1266,8 +1226,6 @@ namespace Jellyfin.ApiClient
             return PostAsync<UserItemDataDto>(url, new Dictionary<string, string>(), CancellationToken.None);
         }
 
-        internal Func<IApiClient, AuthenticationResult, Task> OnAuthenticated { get; set; }
-
         /// <summary>
         /// Authenticates a user and returns the result
         /// </summary>
@@ -1287,22 +1245,14 @@ namespace Jellyfin.ApiClient
 
             var args = new Dictionary<string, string>();
 
-            args["username"] = Uri.EscapeDataString(username);
-            args["pw"] = password;
-
-            var bytes = Encoding.UTF8.GetBytes(password ?? string.Empty);
-            args["password"] = BitConverter.ToString(_cryptographyProvider.CreateSha1(bytes)).Replace("-", string.Empty);
-
-            args["passwordMD5"] = ConnectService.GetConnectPasswordMd5(password ?? string.Empty, _cryptographyProvider);
+            args["Username"] = Uri.EscapeDataString(username);
+            args["Pw"] = password;
 
             var result = await PostAsync<AuthenticationResult>(url, args, CancellationToken.None);
 
             SetAuthenticationInfo(result.AccessToken, result.User.Id);
 
-            if (OnAuthenticated != null)
-            {
-                await OnAuthenticated(this, result).ConfigureAwait(false);
-            }
+            OnAuthenticated?.Invoke(this, new GenericEventArgs<AuthenticationResult>(result));
 
             return result;
         }
@@ -1402,6 +1352,7 @@ namespace Jellyfin.ApiClient
         /// <param name="args">The args.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
+        [Obsolete("Deprecated. Use PostAsync<TInputType, TOutputType> instead.")]
         public async Task<T> PostAsync<T>(string url, Dictionary<string, string> args, CancellationToken cancellationToken = default(CancellationToken))
             where T : class
         {
@@ -1571,7 +1522,7 @@ namespace Jellyfin.ApiClient
             var queryString = new QueryStringDictionary();
 
             queryString.AddIfNotNullOrEmpty("SearchTerm", query.SearchTerm);
-            queryString.AddIfNotNullOrEmpty("UserId", query.UserId);
+            queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             queryString.AddIfNotNullOrEmpty("ParentId", query.ParentId);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
@@ -1763,7 +1714,7 @@ namespace Jellyfin.ApiClient
 
             var dict = new QueryStringDictionary { };
 
-            dict.AddIfNotNullOrEmpty("UserId", query.UserId);
+            dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             dict.AddIfNotNullOrEmpty("ChannelId", query.ChannelId);
             dict.AddIfNotNullOrEmpty("GroupId", query.GroupId);
             dict.AddIfNotNullOrEmpty("Id", query.Id);
@@ -1794,7 +1745,7 @@ namespace Jellyfin.ApiClient
 
             var dict = new QueryStringDictionary { };
 
-            dict.AddIfNotNullOrEmpty("UserId", query.UserId);
+            dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             dict.AddIfNotNull("StartIndex", query.StartIndex);
             dict.AddIfNotNull("Limit", query.Limit);
             dict.AddIfNotNull("IsFavorite", query.IsFavorite);
@@ -2184,7 +2135,7 @@ namespace Jellyfin.ApiClient
                 Name = "SetAudioStreamIndex"
             };
 
-            cmd.Arguments["Index"] = index.ToString(CultureInfo.InvariantCulture);
+            cmd.Arguments["Index"] = index.ToString();
 
             return SendCommandAsync(sessionId, cmd);
         }
@@ -2196,7 +2147,7 @@ namespace Jellyfin.ApiClient
                 Name = "SetSubtitleStreamIndex"
             };
 
-            cmd.Arguments["Index"] = (index ?? -1).ToString(CultureInfo.InvariantCulture);
+            cmd.Arguments["Index"] = (index ?? -1).ToString();
 
             return SendCommandAsync(sessionId, cmd);
         }
@@ -2208,7 +2159,7 @@ namespace Jellyfin.ApiClient
                 Name = "SetVolume"
             };
 
-            cmd.Arguments["Volume"] = volume.ToString(CultureInfo.InvariantCulture);
+            cmd.Arguments["Volume"] = volume.ToString();
 
             return SendCommandAsync(sessionId, cmd);
         }
@@ -2277,7 +2228,7 @@ namespace Jellyfin.ApiClient
         {
             var queryString = new QueryStringDictionary();
 
-            queryString.AddIfNotNullOrEmpty("UserId", query.UserId);
+            queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             queryString.AddIfNotNull("SupportsLatestItems", query.SupportsLatestItems);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
@@ -2367,7 +2318,7 @@ namespace Jellyfin.ApiClient
             }
             catch (Exception ex)
             {
-                Logger.ErrorException("Error logging out", ex);
+                Logger.LogError("Error logging out", ex);
             }
 
             ClearAuthenticationInfo();
@@ -2387,18 +2338,6 @@ namespace Jellyfin.ApiClient
                 var result = DeserializeFromStream<QueryResult<BaseItemDto>>(stream);
 
                 var serverInfo = ServerInfo;
-                if (serverInfo != null && _localAssetManager != null)
-                {
-                    var offlineView = await GetOfflineView(serverInfo.Id, userId).ConfigureAwait(false);
-
-                    if (offlineView != null)
-                    {
-                        var list = result.Items.ToList();
-                        list.Add(offlineView);
-                        result.Items = list.ToArray();
-                        result.TotalRecordCount = list.Count;
-                    }
-                }
 
                 return result;
             }
@@ -2411,7 +2350,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            if (string.IsNullOrEmpty(query.UserId))
+            if (string.IsNullOrEmpty(query.UserId.ToString()))
             {
                 throw new ArgumentNullException("userId");
             }
@@ -2419,7 +2358,7 @@ namespace Jellyfin.ApiClient
             var queryString = new QueryStringDictionary();
             queryString.AddIfNotNull("GroupItems", query.GroupItems);
             queryString.AddIfNotNull("IncludeItemTypes", query.IncludeItemTypes);
-            queryString.AddIfNotNullOrEmpty("ParentId", query.ParentId);
+            queryString.AddIfNotNullOrEmpty("ParentId", query.ParentId.ToString());
             queryString.AddIfNotNull("IsPlayed", query.IsPlayed);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
@@ -2435,24 +2374,6 @@ namespace Jellyfin.ApiClient
             {
                 return DeserializeFromStream<BaseItemDto[]>(stream);
             }
-        }
-
-        private async Task<BaseItemDto> GetOfflineView(string serverId, string userId)
-        {
-            var views = await _localAssetManager.GetViews(serverId, userId).ConfigureAwait(false);
-
-            if (views.Count > 0)
-            {
-                return new BaseItemDto
-                {
-                    Name = "AnyTime",
-                    ServerId = serverId,
-                    Id = "OfflineView",
-                    Type = "OfflineView"
-                };
-            }
-
-            return null;
         }
 
         public Task AddToPlaylist(string playlistId, IEnumerable<string> itemIds, string userId)
@@ -2476,7 +2397,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<PlaylistCreationResult> CreatePlaylist(PlaylistCreationRequest request)
         {
-            if (string.IsNullOrEmpty(request.UserId))
+            if (string.IsNullOrEmpty(request.UserId.ToString()))
             {
                 throw new ArgumentNullException("userId");
             }
@@ -2488,14 +2409,14 @@ namespace Jellyfin.ApiClient
 
             var queryString = new QueryStringDictionary();
 
-            queryString.Add("UserId", request.UserId);
+            queryString.Add("UserId", request.UserId.ToString());
             queryString.Add("Name", request.Name);
 
             if (!string.IsNullOrEmpty(request.MediaType))
                 queryString.Add("MediaType", request.MediaType);
 
             if (request.ItemIdList != null && request.ItemIdList.Any())
-                queryString.Add("Ids", request.ItemIdList);
+                queryString.Add("Ids", request.ItemIdList.Select(o => 0.ToString()).ToList());
 
             var url = GetApiUrl("Playlists/", queryString);
 
@@ -2605,7 +2526,7 @@ namespace Jellyfin.ApiClient
         {
             var dict = new QueryStringDictionary { };
 
-            dict.AddIfNotNullOrEmpty("UserId", request.UserId);
+            dict.AddIfNotNullOrEmpty("UserId", request.UserId.ToString());
 
             var url = GetApiUrl("Items/" + request.Id + "/PlaybackInfo", dict);
 
@@ -2625,18 +2546,6 @@ namespace Jellyfin.ApiClient
             throw new NotImplementedException();
         }
 
-        public Task<SyncJob> CreateSyncJob(SyncJobRequest request)
-        {
-            if (request == null)
-            {
-                throw new ArgumentNullException("request");
-            }
-
-            var url = GetApiUrl("Sync/Jobs");
-
-            return PostAsync<SyncJobRequest, SyncJob>(url, request, CancellationToken.None);
-        }
-
         public Task UpdateSyncJob(SyncJob job)
         {
             if (job == null)
@@ -2647,51 +2556,6 @@ namespace Jellyfin.ApiClient
             var url = GetApiUrl("Sync/Jobs/" + job.Id);
 
             return PostAsync<SyncJob, EmptyRequestResult>(url, job, CancellationToken.None);
-        }
-
-        public async Task<QueryResult<SyncJobItem>> GetSyncJobItems(SyncJobItemQuery query)
-        {
-            var dict = new QueryStringDictionary { };
-
-            dict.AddIfNotNullOrEmpty("JobId", query.JobId);
-            dict.AddIfNotNull("Limit", query.Limit);
-            dict.AddIfNotNull("StartIndex", query.StartIndex);
-            dict.AddIfNotNullOrEmpty("TargetId", query.TargetId);
-            dict.AddIfNotNull("AddMetadata", query.AddMetadata);
-
-            if (query.Statuses.Length > 0)
-            {
-                dict.Add("Statuses", string.Join(",", query.Statuses.Select(i => i.ToString()).ToArray()));
-            }
-
-            var url = GetApiUrl("Sync/JobItems", dict);
-
-            using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
-            {
-                return DeserializeFromStream<QueryResult<SyncJobItem>>(stream);
-            }
-        }
-
-        public async Task<QueryResult<SyncJob>> GetSyncJobs(SyncJobQuery query)
-        {
-            var dict = new QueryStringDictionary { };
-
-            dict.AddIfNotNull("Limit", query.Limit);
-            dict.AddIfNotNull("StartIndex", query.StartIndex);
-            dict.AddIfNotNull("SyncNewContent", query.SyncNewContent);
-            dict.AddIfNotNullOrEmpty("TargetId", query.TargetId);
-
-            if (query.Statuses.Length > 0)
-            {
-                dict.Add("Statuses", string.Join(",", query.Statuses.Select(i => i.ToString()).ToArray()));
-            }
-
-            var url = GetApiUrl("Sync/Jobs", dict);
-
-            using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
-            {
-                return DeserializeFromStream<QueryResult<SyncJob>>(stream);
-            }
         }
 
         public Task ReportSyncJobItemTransferred(string id)
@@ -2748,27 +2612,6 @@ namespace Jellyfin.ApiClient
             var url = GetApiUrl("Sync/OfflineActions");
 
             return PostAsync<List<UserAction>, EmptyRequestResult>(url, actions, CancellationToken.None);
-        }
-
-        public async Task<List<SyncedItem>> GetReadySyncItems(string targetId)
-        {
-            var dict = new QueryStringDictionary { };
-
-            dict.AddIfNotNullOrEmpty("TargetId", targetId);
-
-            var url = GetApiUrl("Sync/Items/Ready", dict);
-
-            using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
-            {
-                return DeserializeFromStream<List<SyncedItem>>(stream);
-            }
-        }
-
-        public Task<SyncDataResponse> SyncData(SyncDataRequest request)
-        {
-            var url = GetApiUrl("Sync/Data");
-
-            return PostAsync<SyncDataRequest, SyncDataResponse>(url, request, CancellationToken.None);
         }
 
         public Task<Stream> GetSyncJobItemAdditionalFile(string id, string name, CancellationToken cancellationToken = default(CancellationToken))
@@ -2846,66 +2689,6 @@ namespace Jellyfin.ApiClient
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
                 return DeserializeFromStream<UserDto>(stream);
-            }
-        }
-
-        public async Task<SyncDialogOptions> GetSyncOptions(SyncJobRequest jobInfo)
-        {
-            var dict = new QueryStringDictionary();
-
-            dict.AddIfNotNullOrEmpty("UserId", jobInfo.UserId);
-            dict.AddIfNotNullOrEmpty("ParentId", jobInfo.ParentId);
-            dict.AddIfNotNullOrEmpty("TargetId", jobInfo.TargetId);
-
-            if (jobInfo.Category.HasValue)
-            {
-                dict.AddIfNotNullOrEmpty("Category", jobInfo.Category.Value.ToString());
-            }
-
-            if (jobInfo.ItemIds != null)
-            {
-                var list = jobInfo.ItemIds.ToList();
-                if (list.Count > 0)
-                {
-                    dict.Add("ItemIds", list);
-                }
-            }
-            
-            var url = GetApiUrl("Sync/Options", dict);
-
-            using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
-            {
-                return DeserializeFromStream<SyncDialogOptions>(stream);
-            }
-        }
-
-        public async Task<SyncDialogOptions> GetSyncOptions(SyncJob jobInfo)
-        {
-            var dict = new QueryStringDictionary();
-
-            dict.AddIfNotNullOrEmpty("UserId", jobInfo.UserId);
-            dict.AddIfNotNullOrEmpty("ParentId", jobInfo.ParentId);
-            dict.AddIfNotNullOrEmpty("TargetId", jobInfo.TargetId);
-
-            if (jobInfo.Category.HasValue)
-            {
-                dict.AddIfNotNullOrEmpty("Category", jobInfo.Category.Value.ToString());
-            }
-
-            if (jobInfo.RequestedItemIds != null)
-            {
-                var list = jobInfo.RequestedItemIds.ToList();
-                if (list.Count > 0)
-                {
-                    dict.Add("ItemIds", list);
-                }
-            }
-
-            var url = GetApiUrl("Sync/Options", dict);
-
-            using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
-            {
-                return DeserializeFromStream<SyncDialogOptions>(stream);
             }
         }
 

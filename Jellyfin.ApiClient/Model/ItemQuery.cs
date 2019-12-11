@@ -13,7 +13,7 @@ namespace Jellyfin.ApiClient.Model
         /// The user to localize search results for
         /// </summary>
         /// <value>The user id.</value>
-        public string UserId { get; set; }
+        public Guid UserId { get; set; }
 
         /// <summary>
         /// Specify this to localize the search to a specific item or folder. Omit to use the root.

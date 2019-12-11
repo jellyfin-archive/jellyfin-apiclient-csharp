@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.Channels;
+﻿using MediaBrowser.Controller.Authentication;
+using MediaBrowser.Model.Channels;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Devices;
 using MediaBrowser.Model.Dto;
@@ -641,6 +642,9 @@ namespace Jellyfin.ApiClient.Model
         /// <exception cref="ArgumentNullException">itemId</exception>
         Task<UserItemDataDto> UpdateUserItemRatingAsync(string itemId, string userId, bool likes);
 
+
+        event EventHandler<GenericEventArgs<AuthenticationResult>> OnAuthenticated;
+
         /// <summary>
         /// Authenticates a user and returns the result
         /// </summary>
@@ -747,7 +751,7 @@ namespace Jellyfin.ApiClient.Model
         /// Gets or sets the current user id.
         /// </summary>
         /// <value>The current user id.</value>
-        string CurrentUserId { get; }
+        Guid CurrentUserId { get; }
 
         /// <summary>
         /// Gets the access token.
@@ -760,7 +764,7 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="accessToken">The access token.</param>
         /// <param name="userId">The user identifier.</param>
-        void SetAuthenticationInfo(string accessToken, string userId);
+        void SetAuthenticationInfo(string accessToken, Guid userId);
 
         /// <summary>
         /// Sets the authentication information.
@@ -1208,34 +1212,6 @@ namespace Jellyfin.ApiClient.Model
         Task UpdateItem(BaseItemDto item);
 
         /// <summary>
-        /// Creates the synchronize job.
-        /// </summary>
-        /// <param name="request">The request.</param>
-        /// <returns>Task&lt;SyncJob&gt;.</returns>
-        Task<SyncJob> CreateSyncJob(SyncJobRequest request);
-
-        /// <summary>
-        /// Updates the synchronize job.
-        /// </summary>
-        /// <param name="job">The job.</param>
-        /// <returns>Task.</returns>
-        Task UpdateSyncJob(SyncJob job);
-
-        /// <summary>
-        /// Gets the synchronize jobs.
-        /// </summary>
-        /// <param name="query">The query.</param>
-        /// <returns>Task&lt;QueryResult&lt;SyncJob&gt;&gt;.</returns>
-        Task<QueryResult<SyncJob>> GetSyncJobs(SyncJobQuery query);
-
-        /// <summary>
-        /// Gets the synchronize job items.
-        /// </summary>
-        /// <param name="query">The query.</param>
-        /// <returns>Task&lt;QueryResult&lt;SyncJobItem&gt;&gt;.</returns>
-        Task<QueryResult<SyncJobItem>> GetSyncJobItems(SyncJobItemQuery query);
-
-        /// <summary>
         /// Reports the synchronize job item transferred.
         /// </summary>
         /// <param name="id">The identifier.</param>
@@ -1271,73 +1247,6 @@ namespace Jellyfin.ApiClient.Model
         /// <returns>Task.</returns>
         Task ReportOfflineActions(List<UserAction> actions);
 
-        /// <summary>
-        /// Gets the ready synchronize items.
-        /// </summary>
-        /// <param name="targetId">The target identifier.</param>
-        /// <returns>List&lt;SyncedItem&gt;.</returns>
-        Task<List<SyncedItem>> GetReadySyncItems(string targetId);
-
-        /// <summary>
-        /// Synchronizes the data.
-        /// </summary>
-        /// <param name="request">The request.</param>
-        /// <returns>Task&lt;SyncDataResponse&gt;.</returns>
-        Task<SyncDataResponse> SyncData(SyncDataRequest request);
-        /// <summary>
-        /// Gets the synchronize job item file URL.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>System.String.</returns>
-        string GetSyncJobItemFileUrl(string id);
-        /// <summary>
-        /// Marks the synchronize job item for removal.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>Task.</returns>
-        Task MarkSyncJobItemForRemoval(string id);
-        /// <summary>
-        /// Unmarks the synchronize job item for removal.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>Task.</returns>
-        Task UnmarkSyncJobItemForRemoval(string id);
-        /// <summary>
-        /// Queues the failed synchronize job item for retry.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>Task.</returns>
-        Task QueueFailedSyncJobItemForRetry(string id);
-        /// <summary>
-        /// Cancels the synchronize job.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>Task.</returns>
-        Task CancelSyncJob(string id);
-        /// <summary>
-        /// Cancels the synchronize job item.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>Task.</returns>
-        Task CancelSyncJobItem(string id);
-        /// <summary>
-        /// Enables the cancelled synchronize job item.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>Task.</returns>
-        Task EnableCancelledSyncJobItem(string id);
-        /// <summary>
-        /// Gets the synchronize options.
-        /// </summary>
-        /// <param name="jobInfo">The job information.</param>
-        /// <returns>Task&lt;SyncOptions&gt;.</returns>
-        Task<SyncDialogOptions> GetSyncOptions(SyncJobRequest jobInfo);
-        /// <summary>
-        /// Gets the synchronize options.
-        /// </summary>
-        /// <param name="jobInfo">The job information.</param>
-        /// <returns>Task&lt;SyncDialogOptions&gt;.</returns>
-        Task<SyncDialogOptions> GetSyncOptions(SyncJob jobInfo);
         /// <summary>
         /// Gets the movie recommendations.
         /// </summary>

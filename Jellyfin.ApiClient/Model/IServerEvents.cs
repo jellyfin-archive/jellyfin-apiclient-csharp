@@ -133,21 +133,5 @@ namespace Jellyfin.ApiClient.Model
         /// Occurs when [session ended].
         /// </summary>
         event EventHandler<GenericEventArgs<SessionInfoDto>> SessionEnded;
-        /// <summary>
-        /// Occurs when [synchronize job created].
-        /// </summary>
-        event EventHandler<GenericEventArgs<SyncJobCreationResult>> SyncJobCreated;
-        /// <summary>
-        /// Occurs when [synchronize job cancelled].
-        /// </summary>
-        event EventHandler<GenericEventArgs<SyncJob>> SyncJobCancelled;
-        /// <summary>
-        /// Occurs when [synchronize jobs updated].
-        /// </summary>
-        event EventHandler<GenericEventArgs<List<SyncJob>>> SyncJobsUpdated;
-        /// <summary>
-        /// Occurs when [synchronize job updated].
-        /// </summary>
-        event EventHandler<GenericEventArgs<CompleteSyncJobInfo>> SyncJobUpdated;
     }
 }

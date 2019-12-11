@@ -1,6 +1,7 @@
 ﻿using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace Jellyfin.ApiClient.Net
         private readonly ILogger _logger;
 
         public ServerLocator()
-            : this(new NullLogger())
+            : this(NullLogger.Instance)
         {
         }
 
@@ -33,7 +34,7 @@ namespace Jellyfin.ApiClient.Net
             var taskCompletionSource = new TaskCompletionSource<List<ServerDiscoveryInfo>>();
             var serversFound = new ConcurrentBag<ServerDiscoveryInfo>();
 
-            _logger.Debug("Searching for servers with timeout of {0} ms", timeoutMs);
+            _logger.LogDebug("Searching for servers with timeout of {0} ms", timeoutMs);
 
             var innerCancellationSource = new CancellationTokenSource();
             var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(
@@ -95,7 +96,7 @@ namespace Jellyfin.ApiClient.Net
                             // Convert bytes to text
                             var json = Encoding.UTF8.GetString(result.Buffer);
 
-                            _logger.Debug("Received response from endpoint: " + result.RemoteEndPoint + ". Response: " + json);
+                            _logger.LogDebug("Received response from endpoint: " + result.RemoteEndPoint + ". Response: " + json);
 
                             if (!string.IsNullOrEmpty(json))
                             {
@@ -112,7 +113,7 @@ namespace Jellyfin.ApiClient.Net
                                 }
                                 catch (Exception ex)
                                 {
-                                    _logger.ErrorException("Error parsing server discovery info", ex);
+                                    _logger.LogError("Error parsing server discovery info", ex);
                                 }
                             }
                         }

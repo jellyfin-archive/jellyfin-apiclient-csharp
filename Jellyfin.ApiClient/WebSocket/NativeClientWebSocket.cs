@@ -1,5 +1,5 @@
 ﻿using Jellyfin.ApiClient.Model;
-using MediaBrowser.Model.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net.WebSockets;
 using System.Threading;
@@ -69,7 +69,7 @@ namespace Jellyfin.ApiClient.WebSocket
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error connecting to {0}", ex, url);
+                _logger.LogError("Error connecting to {0}", ex, url);
 
                 throw;
             }
@@ -97,7 +97,7 @@ namespace Jellyfin.ApiClient.WebSocket
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorException("Error receiving web socket message", ex);
+                    _logger.LogError("Error receiving web socket message", ex);
 
                     break;
                 }
@@ -155,7 +155,7 @@ namespace Jellyfin.ApiClient.WebSocket
 
                 if (!Enum.TryParse(type.ToString(), true, out nativeType))
                 {
-                    _logger.Warn("Unrecognized WebSocketMessageType: {0}", type.ToString());
+                    _logger.LogWarning("Unrecognized WebSocketMessageType: {0}", type.ToString());
                 }
 
                 var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cancellationTokenSource.Token);
@@ -185,7 +185,7 @@ namespace Jellyfin.ApiClient.WebSocket
 
                 if (!Enum.TryParse(_client.State.ToString(), true, out commonState))
                 {
-                    _logger.Warn("Unrecognized WebSocketState: {0}", _client.State.ToString());
+                    _logger.LogWarning("Unrecognized WebSocketState: {0}", _client.State.ToString());
                 }
 
                 return commonState;
@@ -225,7 +225,7 @@ namespace Jellyfin.ApiClient.WebSocket
                 {
                     if (_client.State == WebSocketState.Open)
                     {
-                        _logger.Info("Sending web socket close message.");
+                        _logger.LogInformation("Sending web socket close message.");
 
                         // Can't wait on this. Try to close gracefully though.
                         _client.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);

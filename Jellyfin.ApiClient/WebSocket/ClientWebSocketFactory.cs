@@ -1,5 +1,6 @@
 ﻿using Jellyfin.ApiClient.Model;
-using MediaBrowser.Model.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 
 namespace Jellyfin.ApiClient.WebSocket
@@ -35,7 +36,7 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <returns>IClientWebSocket.</returns>
         public static IClientWebSocket CreateWebSocket()
         {
-            return CreateWebSocket(new NullLogger());
+            return CreateWebSocket(NullLogger.Instance);
         }
     }
 
@@ -43,7 +44,7 @@ namespace Jellyfin.ApiClient.WebSocket
     {
         public static void OpenWebSocket(this ApiClient client)
         {
-            client.OpenWebSocket(() => ClientWebSocketFactory.CreateWebSocket(new NullLogger()));
+            client.OpenWebSocket(() => ClientWebSocketFactory.CreateWebSocket(NullLogger.Instance));
         }
     }
 }

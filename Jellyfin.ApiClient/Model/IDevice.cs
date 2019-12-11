@@ -18,23 +18,5 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <value>The device identifier.</value>
         string DeviceId { get; }
-        /// <summary>
-        /// Gets the local images.
-        /// </summary>
-        /// <returns>IEnumerable&lt;LocalFileInfo&gt;.</returns>
-        Task<IEnumerable<LocalFileInfo>> GetLocalPhotos();
-        /// <summary>
-        /// Gets the local videos.
-        /// </summary>
-        /// <returns>IEnumerable&lt;LocalFileInfo&gt;.</returns>
-        Task<IEnumerable<LocalFileInfo>> GetLocalVideos();
-        /// <summary>
-        /// Uploads the file.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        /// <param name="apiClient">The API client.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task.</returns>
-        Task UploadFile(LocalFileInfo file, IApiClient apiClient, CancellationToken cancellationToken = default(CancellationToken));
     }
 }

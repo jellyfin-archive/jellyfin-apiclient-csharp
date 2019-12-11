@@ -29,7 +29,7 @@ namespace Jellyfin.ApiClient.Net
             var postContent = string.Join("&", strings.ToArray());
 
             RequestContent = postContent;
-            RequestContentType = "application/x-www-form-urlencoded";
+            RequestContentType = "application/json";
         }
     }
 }
