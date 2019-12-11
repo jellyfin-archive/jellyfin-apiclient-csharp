@@ -25,6 +25,7 @@ using MediaBrowser.Model.Users;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -32,6 +33,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Jellyfin.ApiClient
 {
@@ -57,7 +59,7 @@ namespace Jellyfin.ApiClient
         /// <param name="serverAddress">The server address.</param>
         /// <param name="accessToken">The access token.</param>
         public ApiClient(ILogger logger,
-            string serverAddress,
+            Uri serverAddress,
             string accessToken)
             : base(logger, new NewtonsoftJsonSerializer(), serverAddress, accessToken)
         {
@@ -75,7 +77,7 @@ namespace Jellyfin.ApiClient
         /// <param name="device">The device.</param>
         /// <param name="applicationVersion">The application version.</param>
         public ApiClient(ILogger logger,
-            string serverAddress,
+            Uri serverAddress,
             string clientName,
             IDevice device,
             string applicationVersion)
@@ -194,7 +196,7 @@ namespace Jellyfin.ApiClient
                 networkStatus = NetworkConnection.GetNetworkStatus();
             }
 
-            var urlList = new List<string>
+            var urlList = new List<Uri>
 			{
 				ServerInfo.Address,
 			};
@@ -204,10 +206,10 @@ namespace Jellyfin.ApiClient
                 urlList.Reverse();
             }
 
-            if (!string.IsNullOrEmpty(ServerInfo.Address))
+            if (!string.IsNullOrEmpty(ServerInfo.Address.ToString()))
             {
-                if (!string.Equals(ServerInfo.Address, ServerInfo.Address, StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(ServerInfo.Address, ServerInfo.Address, StringComparison.OrdinalIgnoreCase))
+                if (!ServerInfo.Address.ToString().Equals(ServerInfo.Address.ToString(), StringComparison.OrdinalIgnoreCase) &&
+                    !ServerInfo.Address.ToString().Equals(ServerInfo.Address.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
                     urlList.Insert(0, ServerInfo.Address);
                 }
@@ -226,9 +228,9 @@ namespace Jellyfin.ApiClient
             _lastConnectionValidationTime = DateTime.UtcNow;
         }
 
-        private async Task<bool> TryConnect(string baseUrl, CancellationToken cancellationToken)
+        private async Task<bool> TryConnect(Uri baseUrl, CancellationToken cancellationToken)
         {
-            var fullUrl = baseUrl + "/system/info/public";
+            var fullUrl = new Uri(baseUrl, new Uri("/system/info/public", UriKind.Relative));
 
             fullUrl = AddDataFormat(fullUrl);
 
@@ -253,21 +255,21 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        private string ReplaceServerAddress(string url)
+        private Uri ReplaceServerAddress(Uri url)
         {
             var baseUrl = ServerInfo.Address;
 
-            var index = url.IndexOf("/mediabrowser", StringComparison.OrdinalIgnoreCase);
+            var index = url.ToString().IndexOf("/mediabrowser", StringComparison.OrdinalIgnoreCase);
 
             if (index != -1)
             {
-                return baseUrl.TrimEnd('/') + url.Substring(index);
+                return new Uri(baseUrl, url.ToString().Substring(index));
             }
 
             return url;
         }
 
-        public Task<Stream> GetStream(string url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<Stream> GetStream(Uri url, CancellationToken cancellationToken = default(CancellationToken))
         {
             return SendAsync(new HttpRequest
             {
@@ -279,7 +281,7 @@ namespace Jellyfin.ApiClient
         }
 
 
-        public Task<HttpResponse> GetResponse(string url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<HttpResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken))
         {
             return HttpClient.GetResponse(new HttpRequest
             {
@@ -297,9 +299,9 @@ namespace Jellyfin.ApiClient
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{Stream}.</returns>
         /// <exception cref="System.ArgumentNullException">url</exception>
-        public Task<Stream> GetImageStreamAsync(string url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<Stream> GetImageStreamAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (string.IsNullOrEmpty(url))
+            if (string.IsNullOrEmpty(url.ToString()))
             {
                 throw new ArgumentNullException("url");
             }
@@ -326,7 +328,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Items/" + id);
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Items/" + id));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -353,8 +355,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Items/" + itemId + "/Intros");
-
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Items/" + itemId + "/Intros"));
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
                 return DeserializeFromStream<QueryResult<BaseItemDto>>(stream);
@@ -374,12 +375,12 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
             dict.AddIfNotNull("IsFavorite", query.IsFavorite);
 
-            var url = GetApiUrl("Items/Counts", dict);
+            var url = GetApiUrl(new Uri("Items/Counts"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -400,7 +401,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Items/Root");
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Items/Root"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -414,12 +415,12 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{UserDto[]}.</returns>
         public async Task<UserDto[]> GetUsersAsync(UserQuery query)
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNull("IsDisabled", query.IsDisabled);
             queryString.AddIfNotNull("IsHidden", query.IsHidden);
 
-            var url = GetApiUrl("Users", queryString);
+            var url = GetApiUrl(new Uri("Users"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -429,7 +430,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<UserDto[]> GetPublicUsersAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("Users/Public");
+            var url = GetApiUrl(new Uri("Users/Public"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -443,11 +444,11 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{SessionInfoDto[]}.</returns>
         public async Task<SessionInfoDto[]> GetClientSessionsAsync(SessionQuery query)
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("ControllableByUserId", query.ControllableByUserId);
 
-            var url = GetApiUrl("Sessions", queryString);
+            var url = GetApiUrl(new Uri("Sessions"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -514,7 +515,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             if (query.Fields != null)
             {
@@ -536,7 +537,7 @@ namespace Jellyfin.ApiClient
             }
             dict.AddIfNotNull("ImageTypeLimit", query.ImageTypeLimit);
 
-            var url = GetApiUrl("Shows/Upcoming", dict);
+            var url = GetApiUrl(new Uri("Shows/Upcoming"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -551,7 +552,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection{ };
 
             dict.AddIfNotNull("StartIndex", query.StartIndex);
             dict.AddIfNotNull("Limit", query.Limit);
@@ -570,7 +571,7 @@ namespace Jellyfin.ApiClient
             dict.AddIfNotNull("IsMissing", query.IsMissing);
             dict.AddIfNotNull("IsVirtualUnaired", query.IsVirtualUnaired);
 
-            var url = GetApiUrl("Shows/" + query.SeriesId + "/Episodes", dict);
+            var url = GetApiUrl(new Uri("Shows/" + query.SeriesId + "/Episodes"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -585,7 +586,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
 
@@ -598,7 +599,7 @@ namespace Jellyfin.ApiClient
             dict.AddIfNotNull("IsVirtualUnaired", query.IsVirtualUnaired);
             dict.AddIfNotNull("IsSpecialSeason", query.IsSpecialSeason);
 
-            var url = GetApiUrl("Shows/" + query.SeriesId + "/Seasons", dict);
+            var url = GetApiUrl(new Uri("Shows/" + query.SeriesId + "/Seasons"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -618,7 +619,11 @@ namespace Jellyfin.ApiClient
 
             if (query.PersonTypes != null && query.PersonTypes.Length > 0)
             {
-                url += "&PersonTypes=" + string.Join(",", query.PersonTypes);
+                var uriBuilder = new UriBuilder(url);
+                var uriQuery = HttpUtility.ParseQueryString(uriBuilder.Query);
+                uriQuery["PersonTypes"] = string.Join(",", query.PersonTypes);
+                uriBuilder.Query = uriQuery.ToString();
+                url = uriBuilder.Uri;
             }
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
@@ -695,9 +700,9 @@ namespace Jellyfin.ApiClient
         /// <returns>Task.</returns>
         public Task RestartServerAsync()
         {
-            var url = GetApiUrl("System/Restart");
+            var url = GetApiUrl(new Uri("System/Restart"));
 
-            return PostAsync<EmptyRequestResult>(url, new QueryStringDictionary(), CancellationToken.None);
+            return PostAsync<EmptyRequestResult>(url, new NameValueCollection(), CancellationToken.None);
         }
 
         /// <summary>
@@ -706,7 +711,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{SystemInfo}.</returns>
         public async Task<SystemInfo> GetSystemInfoAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("System/Info");
+            var url = GetApiUrl(new Uri("System/Info"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -721,7 +726,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task&lt;PublicSystemInfo&gt;.</returns>
         public async Task<PublicSystemInfo> GetPublicSystemInfoAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("System/Info/Public");
+            var url = GetApiUrl(new Uri("System/Info/Public"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -735,7 +740,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{PluginInfo[]}.</returns>
         public async Task<PluginInfo[]> GetInstalledPluginsAsync()
         {
-            var url = GetApiUrl("Plugins");
+            var url = GetApiUrl(new Uri("Plugins"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -749,7 +754,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{ServerConfiguration}.</returns>
         public async Task<ServerConfiguration> GetServerConfigurationAsync()
         {
-            var url = GetApiUrl("System/Configuration");
+            var url = GetApiUrl(new Uri("System/Configuration"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -763,7 +768,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{TaskInfo[]}.</returns>
         public async Task<TaskInfo[]> GetScheduledTasksAsync()
         {
-            var url = GetApiUrl("ScheduledTasks");
+            var url = GetApiUrl(new Uri("ScheduledTasks"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -784,7 +789,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var url = GetApiUrl("ScheduledTasks/" + id);
+            var url = GetApiUrl(new Uri("ScheduledTasks/" + id));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -805,7 +810,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var url = GetApiUrl("Users/" + id);
+            var url = GetApiUrl(new Uri("Users/" + id));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -819,7 +824,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{List{ParentalRating}}.</returns>
         public async Task<List<ParentalRating>> GetParentalRatingsAsync()
         {
-            var url = GetApiUrl("Localization/ParentalRatings");
+            var url = GetApiUrl(new Uri("Localization/ParentalRatings"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -845,7 +850,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("itemId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Items/" + itemId + "/LocalTrailers");
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Items/" + itemId + "/LocalTrailers"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -871,7 +876,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("itemId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Items/" + itemId + "/SpecialFeatures");
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Items/" + itemId + "/SpecialFeatures"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -885,7 +890,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{CultureDto[]}.</returns>
         public async Task<CultureDto[]> GetCulturesAsync()
         {
-            var url = GetApiUrl("Localization/Cultures");
+            var url = GetApiUrl(new Uri("Localization/Cultures"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -899,7 +904,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{CountryInfo[]}.</returns>
         public async Task<CountryInfo[]> GetCountriesAsync()
         {
-            var url = GetApiUrl("Localization/Countries");
+            var url = GetApiUrl(new Uri("Localization/Countries"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -913,7 +918,7 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{List{GameSystemSummary}}.</returns>
         public async Task<List<GameSystemSummary>> GetGameSystemSummariesAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("Games/SystemSummaries");
+            var url = GetApiUrl(new Uri("Games/SystemSummaries"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -932,16 +937,16 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
 
             if (datePlayed.HasValue)
             {
                 dict.Add("DatePlayed", datePlayed.Value.ToString("yyyyMMddHHmmss"));
             }
 
-            var url = GetApiUrl("Users/" + userId + "/PlayedItems/" + itemId, dict);
+            var url = GetApiUrl(new Uri("Users/" + userId + "/PlayedItems/" + itemId), dict);
 
-            return PostAsync<UserItemDataDto>(url, new Dictionary<string, string>(), CancellationToken.None);
+            return PostAsync<UserItemDataDto>(url, new NameValueCollection(), CancellationToken.None);
         }
 
         /// <summary>
@@ -966,7 +971,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/PlayedItems/" + itemId);
+            var url = GetApiUrl(new Uri("Users/" + userId + "/PlayedItems/" + itemId));
 
             return DeleteAsync<UserItemDataDto>(url, CancellationToken.None);
         }
@@ -990,11 +995,11 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/FavoriteItems/" + itemId);
+            var url = GetApiUrl(new Uri("Users/" + userId + "/FavoriteItems/" + itemId));
 
             if (isFavorite)
             {
-                return PostAsync<UserItemDataDto>(url, new Dictionary<string, string>(), CancellationToken.None);
+                return PostAsync<UserItemDataDto>(url, new NameValueCollection(), CancellationToken.None);
             }
 
             return DeleteAsync<UserItemDataDto>(url, CancellationToken.None);
@@ -1015,7 +1020,7 @@ namespace Jellyfin.ApiClient
 
             Logger.LogDebug("ReportPlaybackStart: Item {0}", info.ItemId);
 
-            var url = GetApiUrl("Sessions/Playing");
+            var url = GetApiUrl(new Uri("Sessions/Playing"));
 
             return PostAsync<PlaybackStartInfo, EmptyRequestResult>(url, info, CancellationToken.None);
         }
@@ -1038,7 +1043,7 @@ namespace Jellyfin.ApiClient
                 return SendWebSocketMessage("ReportPlaybackProgress", JsonSerializer.SerializeToString(info));
             }
 
-            var url = GetApiUrl("Sessions/Playing/Progress");
+            var url = GetApiUrl(new Uri("Sessions/Playing/Progress"));
 
             return PostAsync<PlaybackProgressInfo, EmptyRequestResult>(url, info, CancellationToken.None);
         }
@@ -1056,7 +1061,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("info");
             }
 
-            var url = GetApiUrl("Sessions/Playing/Stopped");
+            var url = GetApiUrl(new Uri("Sessions/Playing/Stopped"));
 
             return PostAsync<PlaybackStopInfo, EmptyRequestResult>(url, info, CancellationToken.None);
         }
@@ -1110,14 +1115,14 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("request");
             }
 
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
             dict.Add("ItemIds", request.ItemIds.Select(o => o.ToString()).ToList());
             dict.AddIfNotNull("StartPositionTicks", request.StartPositionTicks);
             dict.Add("PlayCommand", request.PlayCommand.ToString());
 
-            var url = GetApiUrl("Sessions/" + sessionId + "/Playing", dict);
+            var url = GetApiUrl(new Uri("Sessions/" + sessionId + "/Playing"), dict);
 
-            return PostAsync<EmptyRequestResult>(url, new Dictionary<string, string>(), CancellationToken.None);
+            return PostAsync<EmptyRequestResult>(url, new NameValueCollection(), CancellationToken.None);
         }
 
         public Task SendMessageCommandAsync(string sessionId, MessageCommand command)
@@ -1152,7 +1157,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("sessionId");
             }
 
-            var url = GetApiUrl("Sessions/" + sessionId + "/Command");
+            var url = GetApiUrl(new Uri("Sessions/" + sessionId + "/Command"));
 
             return PostAsync<GeneralCommand, EmptyRequestResult>(url, command, CancellationToken.None);
         }
@@ -1165,12 +1170,12 @@ namespace Jellyfin.ApiClient
         /// <returns>Task.</returns>
         public Task SendPlaystateCommandAsync(string sessionId, PlaystateRequest request)
         {
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
             dict.AddIfNotNull("SeekPositionTicks", request.SeekPositionTicks);
 
-            var url = GetApiUrl("Sessions/" + sessionId + "/Playing/" + request.Command.ToString(), dict);
+            var url = GetApiUrl(new Uri("Sessions/" + sessionId + "/Playing/" + request.Command.ToString()), dict);
 
-            return PostAsync<EmptyRequestResult>(url, new Dictionary<string, string>(), CancellationToken.None);
+            return PostAsync<EmptyRequestResult>(url, new NameValueCollection(), CancellationToken.None);
         }
 
         /// <summary>
@@ -1192,7 +1197,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Items/" + itemId + "/Rating");
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Items/" + itemId + "/Rating"));
 
             return DeleteAsync<UserItemDataDto>(url, CancellationToken.None);
         }
@@ -1217,13 +1222,13 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.Add("likes", likes);
 
-            var url = GetApiUrl("Users/" + userId + "/Items/" + itemId + "/Rating", dict);
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Items/" + itemId + "/Rating"), dict);
 
-            return PostAsync<UserItemDataDto>(url, new Dictionary<string, string>(), CancellationToken.None);
+            return PostAsync<UserItemDataDto>(url, new NameValueCollection(), CancellationToken.None);
         }
 
         /// <summary>
@@ -1241,9 +1246,9 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("username");
             }
 
-            var url = GetApiUrl("Users/AuthenticateByName");
+            var url = GetApiUrl(new Uri("Users/AuthenticateByName"));
 
-            var args = new Dictionary<string, string>();
+            var args = new NameValueCollection();
 
             args["Username"] = Uri.EscapeDataString(username);
             args["Pw"] = password;
@@ -1270,7 +1275,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("configuration");
             }
 
-            var url = GetApiUrl("System/Configuration");
+            var url = GetApiUrl(new Uri("System/Configuration"));
 
             return PostAsync<ServerConfiguration, EmptyRequestResult>(url, configuration, CancellationToken.None);
         }
@@ -1294,7 +1299,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("triggers");
             }
 
-            var url = GetApiUrl("ScheduledTasks/" + id + "/Triggers");
+            var url = GetApiUrl(new Uri("ScheduledTasks/" + id + "/Triggers"));
 
             return PostAsync<TaskTriggerInfo[], EmptyRequestResult>(url, triggers, CancellationToken.None);
         }
@@ -1308,12 +1313,12 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{BaseItemDto}.</returns>
         public async Task<DisplayPreferences> GetDisplayPreferencesAsync(string id, string userId, string client, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
 
             dict.Add("userId", userId);
             dict.Add("client", client);
 
-            var url = GetApiUrl("DisplayPreferences/" + id, dict);
+            var url = GetApiUrl(new Uri("DisplayPreferences/" + id), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1334,12 +1339,12 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("displayPreferences");
             }
 
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
 
             dict.Add("userId", userId);
             dict.Add("client", client);
 
-            var url = GetApiUrl("DisplayPreferences/" + displayPreferences.Id, dict);
+            var url = GetApiUrl(new Uri("DisplayPreferences/" + displayPreferences.Id), dict);
 
             return PostAsync<DisplayPreferences, EmptyRequestResult>(url, displayPreferences, cancellationToken);
         }
@@ -1353,13 +1358,13 @@ namespace Jellyfin.ApiClient
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
         [Obsolete("Deprecated. Use PostAsync<TInputType, TOutputType> instead.")]
-        public async Task<T> PostAsync<T>(string url, Dictionary<string, string> args, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<T> PostAsync<T>(Uri url, NameValueCollection query, CancellationToken cancellationToken = default(CancellationToken))
             where T : class
         {
             url = AddDataFormat(url);
 
             // Create the post body
-            var strings = args.Keys.Select(key => string.Format("{0}={1}", key, args[key]));
+            var strings = query.Keys.Select(key => string.Format("{0}={1}", key, query[key]));
             var postContent = string.Join("&", strings.ToArray());
 
             const string contentType = "application/x-www-form-urlencoded";
@@ -1385,7 +1390,7 @@ namespace Jellyfin.ApiClient
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        private async Task<T> DeleteAsync<T>(string url, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task<T> DeleteAsync<T>(Uri url, CancellationToken cancellationToken = default(CancellationToken))
             where T : class
         {
             url = AddDataFormat(url);
@@ -1412,7 +1417,7 @@ namespace Jellyfin.ApiClient
         /// <param name="obj">The obj.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``1}.</returns>
-        private async Task<TOutputType> PostAsync<TInputType, TOutputType>(string url, TInputType obj, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task<TOutputType> PostAsync<TInputType, TOutputType>(Uri url, TInputType obj, CancellationToken cancellationToken = default(CancellationToken))
             where TOutputType : class
         {
             url = AddDataFormat(url);
@@ -1441,21 +1446,21 @@ namespace Jellyfin.ApiClient
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{Stream}.</returns>
-        public Task<Stream> GetSerializedStreamAsync(string url, CancellationToken cancellationToken)
+        public Task<Stream> GetSerializedStreamAsync(Uri url, CancellationToken cancellationToken)
         {
             url = AddDataFormat(url);
 
             return GetStream(url, cancellationToken);
         }
 
-        public Task<Stream> GetSerializedStreamAsync(string url)
+        public Task<Stream> GetSerializedStreamAsync(Uri url)
         {
             return GetSerializedStreamAsync(url, CancellationToken.None);
         }
 
         public async Task<NotificationsSummary> GetNotificationsSummary(string userId)
         {
-            var url = GetApiUrl("Notifications/" + userId + "/Summary");
+            var url = GetApiUrl(new Uri("Notifications/" + userId + "/Summary"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -1465,11 +1470,11 @@ namespace Jellyfin.ApiClient
 
         public Task MarkNotificationsRead(string userId, IEnumerable<string> notificationIdList, bool isRead)
         {
-            var url = "Notifications/" + userId;
+            Uri url = new Uri("Notifications/" + userId);
 
-            url += isRead ? "/Read" : "/Unread";
+            url = new Uri(url, isRead ? "/Read" : "/Unread");
 
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
 
             var ids = notificationIdList.ToArray();
 
@@ -1477,14 +1482,14 @@ namespace Jellyfin.ApiClient
 
             url = GetApiUrl(url, dict);
 
-            return PostAsync<EmptyRequestResult>(url, new Dictionary<string, string>(), CancellationToken.None);
+            return PostAsync<EmptyRequestResult>(url, new NameValueCollection(), CancellationToken.None);
         }
 
         public async Task<NotificationResult> GetNotificationsAsync(NotificationQuery query)
         {
             var url = "Notifications/" + query.UserId;
 
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
             dict.AddIfNotNull("ItemIds", query.IsRead);
             dict.AddIfNotNull("StartIndex", query.StartIndex);
             dict.AddIfNotNull("Limit", query.Limit);
@@ -1499,12 +1504,12 @@ namespace Jellyfin.ApiClient
 
         public async Task<AllThemeMediaResult> GetAllThemeMediaAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.Add("InheritFromParent", inheritFromParent);
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
-            var url = GetApiUrl("Items/" + itemId + "/ThemeMedia", queryString);
+            var url = GetApiUrl(new Uri("Items/" + itemId + "/ThemeMedia"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1519,7 +1524,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("SearchTerm", query.SearchTerm);
             queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
@@ -1543,7 +1548,7 @@ namespace Jellyfin.ApiClient
             queryString.AddIfNotNull("IsSports", query.IsSports);
             queryString.AddIfNotNull("MediaTypes", query.MediaTypes);
 
-            var url = GetApiUrl("Search/Hints", queryString);
+            var url = GetApiUrl(new Uri("Search/Hints"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -1553,12 +1558,12 @@ namespace Jellyfin.ApiClient
 
         public async Task<ThemeMediaResult> GetThemeSongsAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.Add("InheritFromParent", inheritFromParent);
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
-            var url = GetApiUrl("Items/" + itemId + "/ThemeSongs", queryString);
+            var url = GetApiUrl(new Uri("Items/" + itemId + "/ThemeSongs"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1568,12 +1573,12 @@ namespace Jellyfin.ApiClient
 
         public async Task<ThemeMediaResult> GetThemeVideosAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.Add("InheritFromParent", inheritFromParent);
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
-            var url = GetApiUrl("Items/" + itemId + "/ThemeVideos", queryString);
+            var url = GetApiUrl(new Uri("Items/" + itemId + "/ThemeVideos"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1600,12 +1605,12 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("itemId");
             }
 
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNull("startIndex", startIndex);
             queryString.AddIfNotNull("limit", limit);
 
-            var url = GetApiUrl("Items/" + itemId + "/CriticReviews", queryString);
+            var url = GetApiUrl(new Uri("Items/" + itemId + "/CriticReviews"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1613,7 +1618,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<T> GetAsync<T>(string url, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<T> GetAsync<T>(Uri url, CancellationToken cancellationToken = default(CancellationToken))
             where T : class
         {
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
@@ -1630,11 +1635,11 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{List{ItemIndex}}.</returns>
         public async Task<List<ItemIndex>> GetGamePlayerIndex(string userId, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
-            var url = GetApiUrl("Games/PlayerIndex", queryString);
+            var url = GetApiUrl(new Uri("Games/PlayerIndex"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1651,12 +1656,12 @@ namespace Jellyfin.ApiClient
         /// <returns>Task{List{ItemIndex}}.</returns>
         public async Task<List<ItemIndex>> GetYearIndex(string userId, string[] includeItemTypes, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("UserId", userId);
             queryString.AddIfNotNull("IncludeItemTypes", includeItemTypes);
 
-            var url = GetApiUrl("Items/YearIndex", queryString);
+            var url = GetApiUrl(new Uri("Items/YearIndex"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1671,14 +1676,14 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("capabilities");
             }
 
-            var url = GetApiUrl("Sessions/Capabilities/Full");
+            var url = GetApiUrl(new Uri("Sessions/Capabilities/Full"));
 
             return PostAsync<ClientCapabilities, EmptyRequestResult>(url, capabilities, cancellationToken);
         }
 
         public async Task<LiveTvInfo> GetLiveTvInfoAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("LiveTv/Info");
+            var url = GetApiUrl(new Uri("LiveTv/Info"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1693,11 +1698,11 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
 
-            var url = GetApiUrl("LiveTv/Recordings/Groups", dict);
+            var url = GetApiUrl(new Uri("LiveTv/Recordings/Groups"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1712,7 +1717,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             dict.AddIfNotNullOrEmpty("ChannelId", query.ChannelId);
@@ -1728,7 +1733,7 @@ namespace Jellyfin.ApiClient
                 dict.Add("EnableTotalRecordCount", query.EnableTotalRecordCount);
             }
 
-            var url = GetApiUrl("LiveTv/Recordings", dict);
+            var url = GetApiUrl(new Uri("LiveTv/Recordings"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1743,7 +1748,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             dict.AddIfNotNull("StartIndex", query.StartIndex);
@@ -1759,7 +1764,7 @@ namespace Jellyfin.ApiClient
                 dict.Add("ChannelType", query.ChannelType.Value.ToString());
             }
 
-            var url = GetApiUrl("LiveTv/Channels", dict);
+            var url = GetApiUrl(new Uri("LiveTv/Channels"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1774,9 +1779,9 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
-            var url = GetApiUrl("LiveTv/SeriesTimers/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/SeriesTimers/" + id), dict);
 
             return SendAsync(new HttpRequest
             {
@@ -1794,9 +1799,9 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
-            var url = GetApiUrl("LiveTv/Timers/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/Timers/" + id), dict);
 
             return SendAsync(new HttpRequest
             {
@@ -1814,10 +1819,10 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
             dict.AddIfNotNullOrEmpty("userId", userId);
 
-            var url = GetApiUrl("LiveTv/Channels/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/Channels/" + id), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1832,10 +1837,10 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
             dict.AddIfNotNullOrEmpty("userId", userId);
 
-            var url = GetApiUrl("LiveTv/Recordings/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/Recordings/" + id), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1850,10 +1855,10 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
             dict.AddIfNotNullOrEmpty("userId", userId);
 
-            var url = GetApiUrl("LiveTv/Recordings/Groups/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/Recordings/Groups/" + id), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1868,9 +1873,9 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
-            var url = GetApiUrl("LiveTv/SeriesTimers/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/SeriesTimers/" + id), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1885,12 +1890,12 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("SortBy", query.SortBy);
             dict.Add("SortOrder", query.SortOrder.ToString());
 
-            var url = GetApiUrl("LiveTv/SeriesTimers", dict);
+            var url = GetApiUrl(new Uri("LiveTv/SeriesTimers"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1905,9 +1910,9 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
-            var url = GetApiUrl("LiveTv/Timers/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/Timers/" + id), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1922,12 +1927,12 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("ChannelId", query.ChannelId);
             dict.AddIfNotNullOrEmpty("SeriesTimerId", query.SeriesTimerId);
 
-            var url = GetApiUrl("LiveTv/Timers", dict);
+            var url = GetApiUrl(new Uri("LiveTv/Timers"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1942,7 +1947,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             const string isoDateFormat = "o";
 
@@ -1976,7 +1981,7 @@ namespace Jellyfin.ApiClient
             }
 
             // TODO: This endpoint supports POST if the query string is too long
-            var url = GetApiUrl("LiveTv/Programs", dict);
+            var url = GetApiUrl(new Uri("LiveTv/Programs"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -1991,7 +1996,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
             dict.AddIfNotNull("Limit", query.Limit);
@@ -2003,7 +2008,7 @@ namespace Jellyfin.ApiClient
                 dict.Add("EnableTotalRecordCount", query.EnableTotalRecordCount);
             }
 
-            var url = GetApiUrl("LiveTv/Programs/Recommended", dict);
+            var url = GetApiUrl(new Uri("LiveTv/Programs/Recommended"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2018,7 +2023,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("timer");
             }
 
-            var url = GetApiUrl("LiveTv/SeriesTimers");
+            var url = GetApiUrl(new Uri("LiveTv/SeriesTimers"));
 
             return PostAsync<SeriesTimerInfoDto, EmptyRequestResult>(url, timer, cancellationToken);
         }
@@ -2030,7 +2035,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("timer");
             }
 
-            var url = GetApiUrl("LiveTv/Timers");
+            var url = GetApiUrl(new Uri("LiveTv/Timers"));
 
             return PostAsync<BaseTimerInfoDto, EmptyRequestResult>(url, timer, cancellationToken);
         }
@@ -2042,11 +2047,11 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("programId");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("programId", programId);
 
-            var url = GetApiUrl("LiveTv/Timers/Defaults", dict);
+            var url = GetApiUrl(new Uri("LiveTv/Timers/Defaults"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2056,7 +2061,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("LiveTv/Timers/Defaults");
+            var url = GetApiUrl(new Uri("LiveTv/Timers/Defaults"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2066,7 +2071,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<GuideInfo> GetLiveTvGuideInfo(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("LiveTv/GuideInfo");
+            var url = GetApiUrl(new Uri("LiveTv/GuideInfo"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2081,10 +2086,10 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
             dict.AddIfNotNullOrEmpty("userId", userId);
 
-            var url = GetApiUrl("LiveTv/Programs/" + id, dict);
+            var url = GetApiUrl(new Uri("LiveTv/Programs/" + id), dict);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2099,7 +2104,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("timer");
             }
 
-            var url = GetApiUrl("LiveTv/SeriesTimers/" + timer.Id);
+            var url = GetApiUrl(new Uri("LiveTv/SeriesTimers/" + timer.Id));
 
             return PostAsync<SeriesTimerInfoDto, EmptyRequestResult>(url, timer, cancellationToken);
         }
@@ -2111,7 +2116,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("timer");
             }
 
-            var url = GetApiUrl("LiveTv/Timers/" + timer.Id);
+            var url = GetApiUrl(new Uri("LiveTv/Timers/" + timer.Id));
 
             return PostAsync<TimerInfoDto, EmptyRequestResult>(url, timer, cancellationToken);
         }
@@ -2166,11 +2171,11 @@ namespace Jellyfin.ApiClient
 
         public async Task<QueryResult<BaseItemDto>> GetAdditionalParts(string itemId, string userId)
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
-            var url = GetApiUrl("Videos/" + itemId + "/AdditionalParts", queryString);
+            var url = GetApiUrl(new Uri("Videos/" + itemId + "/AdditionalParts"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, CancellationToken.None).ConfigureAwait(false))
             {
@@ -2180,7 +2185,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<ChannelFeatures> GetChannelFeatures(string channelId, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var url = GetApiUrl("Channels/" + channelId + "/Features");
+            var url = GetApiUrl(new Uri("Channels/" + channelId + "/Features"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2190,7 +2195,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<QueryResult<BaseItemDto>> GetChannelItems(ChannelItemQuery query, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("UserId", query.UserId);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
@@ -2226,7 +2231,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<QueryResult<BaseItemDto>> GetChannels(ChannelQuery query, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             queryString.AddIfNotNull("SupportsLatestItems", query.SupportsLatestItems);
@@ -2234,7 +2239,7 @@ namespace Jellyfin.ApiClient
             queryString.AddIfNotNull("Limit", query.Limit);
             queryString.AddIfNotNull("IsFavorite", query.IsFavorite);
 
-            var url = GetApiUrl("Channels", queryString);
+            var url = GetApiUrl(new Uri("Channels"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2244,10 +2249,10 @@ namespace Jellyfin.ApiClient
 
         public async Task<SessionInfoDto> GetCurrentSessionAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.Add("DeviceId", DeviceId);
-            var url = GetApiUrl("Sessions", queryString);
+            var url = GetApiUrl(new Uri("Sessions"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2259,11 +2264,11 @@ namespace Jellyfin.ApiClient
 
         public Task StopTranscodingProcesses(string deviceId, string playSessionId)
         {
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.Add("DeviceId", DeviceId);
             queryString.AddIfNotNullOrEmpty("PlaySessionId", playSessionId);
-            var url = GetApiUrl("Videos/ActiveEncodings", queryString);
+            Uri url = GetApiUrl(new Uri("Videos/ActiveEncodings"), queryString);
 
             return SendAsync(new HttpRequest
             {
@@ -2285,7 +2290,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
             queryString.Add("UserId", query.UserId);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
@@ -2300,7 +2305,7 @@ namespace Jellyfin.ApiClient
 
             queryString.AddIfNotNull("ChannelIds", query.ChannelIds);
 
-            var url = GetApiUrl("Channels/Items/Latest");
+            var url = GetApiUrl(new Uri("Channels/Items/Latest"));
 
             using (var stream = await GetSerializedStreamAsync(url, CancellationToken.None).ConfigureAwait(false))
             {
@@ -2312,9 +2317,9 @@ namespace Jellyfin.ApiClient
         {
             try
             {
-                var url = GetApiUrl("Sessions/Logout");
+                var url = GetApiUrl(new Uri("Sessions/Logout"));
 
-                await PostAsync<EmptyRequestResult>(url, new Dictionary<string, string>(), CancellationToken.None);
+                await PostAsync<EmptyRequestResult>(url, new NameValueCollection(), CancellationToken.None);
             }
             catch (Exception ex)
             {
@@ -2331,7 +2336,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Views");
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Views"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {
@@ -2355,7 +2360,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
             queryString.AddIfNotNull("GroupItems", query.GroupItems);
             queryString.AddIfNotNull("IncludeItemTypes", query.IncludeItemTypes);
             queryString.AddIfNotNullOrEmpty("ParentId", query.ParentId.ToString());
@@ -2368,7 +2373,7 @@ namespace Jellyfin.ApiClient
                 queryString.Add("fields", query.Fields.Select(f => f.ToString()));
             }
 
-            var url = GetApiUrl("Users/" + query.UserId + "/Items/Latest", queryString);
+            var url = GetApiUrl(new Uri("Users/" + query.UserId + "/Items/Latest"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, CancellationToken.None).ConfigureAwait(false))
             {
@@ -2388,11 +2393,11 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("itemIds");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNull("Ids", itemIds);
-            var url = GetApiUrl(string.Format("Playlists/{0}/Items", playlistId), dict);
-            return PostAsync<EmptyRequestResult>(url, new Dictionary<string, string>(), CancellationToken.None);
+            var url = GetApiUrl(new Uri(string.Format("Playlists/{0}/Items", playlistId)), dict);
+            return PostAsync<EmptyRequestResult>(url, new NameValueCollection(), CancellationToken.None);
         }
 
         public async Task<PlaylistCreationResult> CreatePlaylist(PlaylistCreationRequest request)
@@ -2407,7 +2412,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("must provide either MediaType or Ids");
             }
 
-            var queryString = new QueryStringDictionary();
+            var queryString = new NameValueCollection();
 
             queryString.Add("UserId", request.UserId.ToString());
             queryString.Add("Name", request.Name);
@@ -2418,9 +2423,9 @@ namespace Jellyfin.ApiClient
             if (request.ItemIdList != null && request.ItemIdList.Any())
                 queryString.Add("Ids", request.ItemIdList.Select(o => 0.ToString()).ToList());
 
-            var url = GetApiUrl("Playlists/", queryString);
+            var url = GetApiUrl(new Uri("Playlists/"), queryString);
 
-            return await PostAsync<PlaylistCreationResult>(url, new Dictionary<string, string>(), CancellationToken.None);
+            return await PostAsync<PlaylistCreationResult>(url, new NameValueCollection(), CancellationToken.None);
 
         }
 
@@ -2431,7 +2436,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNull("StartIndex", query.StartIndex);
 
@@ -2443,7 +2448,7 @@ namespace Jellyfin.ApiClient
                 dict.Add("fields", query.Fields.Select(f => f.ToString()));
             }
 
-            var url = GetApiUrl("Playlists/" + query.Id + "/Items", dict);
+            var url = GetApiUrl(new Uri("Playlists/" + query.Id + "/Items"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -2463,20 +2468,20 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("entryIds");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNull("EntryIds", entryIds);
-            var url = GetApiUrl(string.Format("Playlists/{0}/Items", playlistId), dict);
+            var url = GetApiUrl(new Uri(string.Format("Playlists/{0}/Items", playlistId)), dict);
             return DeleteAsync<EmptyRequestResult>(url, CancellationToken.None);
         }
 
         public async Task<ContentUploadHistory> GetContentUploadHistory(string deviceId)
         {
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.Add("DeviceId", deviceId);
 
-            var url = GetApiUrl("Devices/CameraUploads", dict);
+            var url = GetApiUrl(new Uri("Devices/CameraUploads"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -2486,14 +2491,14 @@ namespace Jellyfin.ApiClient
 
         public async Task UploadFile(Stream stream, LocalFileInfo file, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.Add("DeviceId", DeviceId);
             dict.Add("Name", file.Name);
             dict.Add("Id", file.Id);
             dict.AddIfNotNullOrEmpty("Album", file.Album);
 
-            var url = GetApiUrl("Devices/CameraUploads", dict);
+            var url = GetApiUrl(new Uri("Devices/CameraUploads"), dict);
 
             using (stream)
             {
@@ -2512,9 +2517,9 @@ namespace Jellyfin.ApiClient
 
         public async Task<DevicesOptions> GetDevicesOptions()
         {
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
-            var url = GetApiUrl("System/Configuration/devices", dict);
+            var url = GetApiUrl(new Uri("System/Configuration/devices"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -2524,11 +2529,11 @@ namespace Jellyfin.ApiClient
 
         public async Task<PlaybackInfoResponse> GetPlaybackInfo(PlaybackInfoRequest request)
         {
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("UserId", request.UserId.ToString());
 
-            var url = GetApiUrl("Items/" + request.Id + "/PlaybackInfo", dict);
+            var url = GetApiUrl(new Uri("Items/" + request.Id + "/PlaybackInfo"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -2546,50 +2551,6 @@ namespace Jellyfin.ApiClient
             throw new NotImplementedException();
         }
 
-        public Task UpdateSyncJob(SyncJob job)
-        {
-            if (job == null)
-            {
-                throw new ArgumentNullException("job");
-            }
-
-            var url = GetApiUrl("Sync/Jobs/" + job.Id);
-
-            return PostAsync<SyncJob, EmptyRequestResult>(url, job, CancellationToken.None);
-        }
-
-        public Task ReportSyncJobItemTransferred(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-            {
-                throw new ArgumentNullException("id");
-            }
-
-            var url = GetApiUrl("Sync/JobItems/" + id + "/Transferred");
-
-            return PostAsync<EmptyRequestResult>(url, new Dictionary<string, string>());
-        }
-
-        public Task<Stream> GetSyncJobItemFile(string id, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (string.IsNullOrEmpty(id))
-            {
-                throw new ArgumentNullException("id");
-            }
-
-            return GetStream(GetSyncJobItemFileUrl(id), cancellationToken);
-        }
-
-        public string GetSyncJobItemFileUrl(string id)
-        {
-            if (string.IsNullOrEmpty(id))
-            {
-                throw new ArgumentNullException("id");
-            }
-
-            return GetApiUrl("Sync/JobItems/" + id + "/File");
-        }
-
         public Task UpdateUserConfiguration(string userId, UserConfiguration configuration)
         {
             if (configuration == null)
@@ -2597,84 +2558,9 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("configuration");
             }
 
-            var url = GetApiUrl("Users/" + userId + "/Configuration");
+            var url = GetApiUrl(new Uri("Users/" + userId + "/Configuration"));
 
             return PostAsync<UserConfiguration, EmptyRequestResult>(url, configuration, CancellationToken.None);
-        }
-
-        public Task ReportOfflineActions(List<UserAction> actions)
-        {
-            if (actions == null || actions.Count == 0)
-            {
-                throw new ArgumentNullException("actions");
-            }
-
-            var url = GetApiUrl("Sync/OfflineActions");
-
-            return PostAsync<List<UserAction>, EmptyRequestResult>(url, actions, CancellationToken.None);
-        }
-
-        public Task<Stream> GetSyncJobItemAdditionalFile(string id, string name, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var dict = new QueryStringDictionary { };
-
-            dict.AddIfNotNullOrEmpty("Name", name);
-
-            var url = GetApiUrl("Sync/JobItems/" + id + "/AdditionalFiles", dict);
-
-            return GetStream(url, cancellationToken);
-        }
-
-        public Task CancelSyncJob(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                throw new ArgumentNullException("id");
-            }
-
-            var url = GetApiUrl("Sync/Jobs/" + id);
-
-            return DeleteAsync<EmptyRequestResult>(url, CancellationToken.None);
-        }
-
-        public Task CancelSyncJobItem(string id)
-        {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                throw new ArgumentNullException("id");
-            }
-
-            var url = GetApiUrl("Sync/JobItems/" + id);
-
-            return DeleteAsync<EmptyRequestResult>(url, CancellationToken.None);
-        }
-
-        public Task EnableCancelledSyncJobItem(string id)
-        {
-            var url = GetApiUrl("Sync/JobItems/" + id + "/Enable");
-
-            return PostAsync<EmptyRequestResult>(url, new QueryStringDictionary(), CancellationToken.None);
-        }
-
-        public Task MarkSyncJobItemForRemoval(string id)
-        {
-            var url = GetApiUrl("Sync/JobItems/" + id + "/MarkForRemoval");
-
-            return PostAsync<EmptyRequestResult>(url, new QueryStringDictionary(), CancellationToken.None);
-        }
-
-        public Task QueueFailedSyncJobItemForRetry(string id)
-        {
-            var url = GetApiUrl("Sync/JobItems/" + id + "/Enable");
-
-            return PostAsync<EmptyRequestResult>(url, new QueryStringDictionary(), CancellationToken.None);
-        }
-
-        public Task UnmarkSyncJobItemForRemoval(string id)
-        {
-            var url = GetApiUrl("Sync/JobItems/" + id + "/UnmarkForRemoval");
-
-            return PostAsync<EmptyRequestResult>(url, new QueryStringDictionary(), CancellationToken.None);
         }
 
         public async Task<UserDto> GetOfflineUserAsync(string id)
@@ -2684,7 +2570,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("id");
             }
 
-            var url = GetApiUrl("Users/" + id + "/Offline");
+            var url = GetApiUrl(new Uri("Users/" + id + "/Offline"));
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -2694,7 +2580,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<List<RecommendationDto>> GetMovieRecommendations(MovieRecommendationQuery query)
         {
-            var dict = new QueryStringDictionary();
+            var dict = new NameValueCollection();
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
             dict.AddIfNotNullOrEmpty("ParentId", query.ParentId);
@@ -2706,7 +2592,7 @@ namespace Jellyfin.ApiClient
                 dict.Add("fields", query.Fields.Select(f => f.ToString()));
             }
 
-            var url = GetApiUrl("Movies/Recommendations", dict);
+            var url = GetApiUrl(new Uri("Movies/Recommendations"), dict);
 
             using (var stream = await GetSerializedStreamAsync(url).ConfigureAwait(false))
             {
@@ -2716,20 +2602,9 @@ namespace Jellyfin.ApiClient
 
         public Task<LiveStreamResponse> OpenLiveStream(LiveStreamRequest request, CancellationToken cancellationToken)
         {
-            var url = GetApiUrl("LiveStreams/Open");
+            var url = GetApiUrl(new Uri("LiveStreams/Open"));
 
             return PostAsync<LiveStreamRequest, LiveStreamResponse>(url, request, cancellationToken);
-        }
-
-        public Task CancelSyncLibraryItems(string targetId, IEnumerable<string> itemIds)
-        {
-            var dict = new QueryStringDictionary();
-
-            dict.Add("ItemIds", itemIds);
-
-            var url = GetApiUrl("Sync/" + targetId + "/Items", dict);
-
-            return DeleteAsync<EmptyRequestResult>(url, CancellationToken.None);
         }
 
         public Task<int> DetectMaxBitrate(CancellationToken cancellationToken)
@@ -2739,7 +2614,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<EndPointInfo> GetEndPointInfo(CancellationToken cancellationToken)
         {
-            var url = GetApiUrl("System/Endpoint");
+            var url = GetApiUrl(new Uri("System/Endpoint"));
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {

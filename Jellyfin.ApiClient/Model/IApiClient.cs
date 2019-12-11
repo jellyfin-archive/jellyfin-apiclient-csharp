@@ -22,6 +22,7 @@ using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Users;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,8 +43,8 @@ namespace Jellyfin.ApiClient.Model
         /// Gets the API URL.
         /// </summary>
         /// <param name="handler">The handler.</param>
-        /// <returns>System.String.</returns>
-        string GetApiUrl(string handler);
+        /// <returns>System.Uri.</returns>
+        Uri GetApiUrl(Uri handler);
 
         /// <summary>
         /// Gets the game system summaries async.
@@ -59,7 +60,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        Task<T> GetAsync<T>(string url, CancellationToken cancellationToken = default(CancellationToken))
+        Task<T> GetAsync<T>(Uri url, CancellationToken cancellationToken = default(CancellationToken))
             where T : class;
 
         /// <summary>
@@ -180,7 +181,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{Stream}.</returns>
         /// <exception cref="ArgumentNullException">url</exception>
-        Task<Stream> GetImageStreamAsync(string url, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Stream> GetImageStreamAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets the stream.
@@ -188,7 +189,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;Stream&gt;.</returns>
-        Task<Stream> GetStream(string url, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Stream> GetStream(Uri url, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets the response.
@@ -196,7 +197,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;HttpResponse&gt;.</returns>
-        Task<HttpResponse> GetResponse(string url, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Updates the user configuration.
@@ -701,7 +702,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="args">The args.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        Task<T> PostAsync<T>(string url, Dictionary<string, string> args, CancellationToken cancellationToken = default(CancellationToken))
+        Task<T> PostAsync<T>(Uri url, NameValueCollection args, CancellationToken cancellationToken = default(CancellationToken))
             where T : class;
 
         /// <summary>
@@ -709,7 +710,7 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="url">The URL.</param>
         /// <returns>Task{Stream}.</returns>
-        Task<Stream> GetSerializedStreamAsync(string url);
+        Task<Stream> GetSerializedStreamAsync(Uri url);
 
         /// <summary>
         /// Gets the json serializer.
@@ -721,7 +722,7 @@ namespace Jellyfin.ApiClient.Model
         /// Gets or sets the server address
         /// </summary>
         /// <value>The server address.</value>
-        string ServerAddress { get; }
+        Uri ServerAddress { get; }
 
         /// <summary>
         /// Gets or sets the type of the client.
@@ -782,7 +783,7 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="address">The address.</param>
         /// <param name="keepExistingAuth">if set to <c>true</c> [keep existing authentication].</param>
-        void ChangeServerLocation(string address, bool keepExistingAuth = false);
+        void ChangeServerLocation(Uri address, bool keepExistingAuth = false);
 
         /// <summary>
         /// Starts the receiving synchronize job updates.
@@ -833,7 +834,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="ArgumentNullException">item</exception>
-        string GetImageUrl(BaseItemDto item, ImageOptions options);
+        Uri GetImageUrl(BaseItemDto item, ImageOptions options);
 
         /// <summary>
         /// Gets the image URL.
@@ -841,14 +842,14 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="item">The item.</param>
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
-        string GetImageUrl(ChannelInfoDto item, ImageOptions options);
+        Uri GetImageUrl(ChannelInfoDto item, ImageOptions options);
 
         /// <summary>
         /// Gets the subtitle URL.
         /// </summary>
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
-        string GetSubtitleUrl(SubtitleDownloadOptions options);
+        Uri GetSubtitleUrl(SubtitleDownloadOptions options);
 
         /// <summary>
         /// Gets an image url that can be used to download an image from the api
@@ -857,7 +858,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="ArgumentNullException">itemId</exception>
-        string GetImageUrl(string itemId, ImageOptions options);
+        Uri GetImageUrl(string itemId, ImageOptions options);
 
         /// <summary>
         /// Gets the user image URL.
@@ -866,7 +867,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="ArgumentNullException">user</exception>
-        string GetUserImageUrl(UserDto user, ImageOptions options);
+        Uri GetUserImageUrl(UserDto user, ImageOptions options);
 
         /// <summary>
         /// Gets an image url that can be used to download an image from the api
@@ -875,7 +876,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="ArgumentNullException">userId</exception>
-        string GetUserImageUrl(string userId, ImageOptions options);
+        Uri GetUserImageUrl(string userId, ImageOptions options);
 
         /// <summary>
         /// Gets the person image URL.
@@ -884,7 +885,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="ArgumentNullException">item</exception>
-        string GetPersonImageUrl(BaseItemPerson item, ImageOptions options);
+        Uri GetPersonImageUrl(BaseItemPerson item, ImageOptions options);
 
         /// <summary>
         /// This is a helper to get a list of backdrop url's from a given ApiBaseItemWrapper. If the actual item does not have any backdrops it will return backdrops from the first parent that does.
@@ -893,7 +894,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String[][].</returns>
         /// <exception cref="ArgumentNullException">item</exception>
-        string[] GetBackdropImageUrls(BaseItemDto item, ImageOptions options);
+        Uri[] GetBackdropImageUrls(BaseItemDto item, ImageOptions options);
 
         /// <summary>
         /// This is a helper to get the logo image url from a given ApiBaseItemWrapper. If the actual item does not have a logo, it will return the logo from the first parent that does, or null.
@@ -902,7 +903,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="ArgumentNullException">item</exception>
-        string GetLogoImageUrl(BaseItemDto item, ImageOptions options);
+        Uri GetLogoImageUrl(BaseItemDto item, ImageOptions options);
 
         /// <summary>
         /// Gets the art image URL.
@@ -910,7 +911,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="item">The item.</param>
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
-        string GetArtImageUrl(BaseItemDto item, ImageOptions options);
+        Uri GetArtImageUrl(BaseItemDto item, ImageOptions options);
 
         /// <summary>
         /// Gets the thumb image URL.
@@ -918,7 +919,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="item">The item.</param>
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
-        string GetThumbImageUrl(BaseItemDto item, ImageOptions options);
+        Uri GetThumbImageUrl(BaseItemDto item, ImageOptions options);
 
         /// <summary>
         /// Gets the live tv information asynchronous.
@@ -1212,40 +1213,9 @@ namespace Jellyfin.ApiClient.Model
         Task UpdateItem(BaseItemDto item);
 
         /// <summary>
-        /// Reports the synchronize job item transferred.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <returns>Task.</returns>
-        Task ReportSyncJobItemTransferred(string id);
-
-        /// <summary>
-        /// Gets the synchronize job item file.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task&lt;Stream&gt;.</returns>
-        Task<Stream> GetSyncJobItemFile(string id, CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Gets the synchronize job item additional file.
-        /// </summary>
-        /// <param name="id">The identifier.</param>
-        /// <param name="name">The name.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task&lt;Stream&gt;.</returns>
-        Task<Stream> GetSyncJobItemAdditionalFile(string id, string name, CancellationToken cancellationToken);
-
-        /// <summary>
         /// Opens the web socket.
         /// </summary>
         void OpenWebSocket(Func<IClientWebSocket> webSocketFactory);
-
-        /// <summary>
-        /// Reports the offline actions.
-        /// </summary>
-        /// <param name="actions">The actions.</param>
-        /// <returns>Task.</returns>
-        Task ReportOfflineActions(List<UserAction> actions);
 
         /// <summary>
         /// Gets the movie recommendations.
@@ -1260,13 +1230,6 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;LiveStreamResponse&gt;.</returns>
         Task<LiveStreamResponse> OpenLiveStream(LiveStreamRequest request, CancellationToken cancellationToken);
-        /// <summary>
-        /// Cancels the synchronize library items.
-        /// </summary>
-        /// <param name="targetId">The target identifier.</param>
-        /// <param name="itemIds">The item ids.</param>
-        /// <returns>Task.</returns>
-        Task CancelSyncLibraryItems(string targetId, IEnumerable<string> itemIds);
         /// <summary>
         /// Gets the supported bitrate.
         /// </summary>

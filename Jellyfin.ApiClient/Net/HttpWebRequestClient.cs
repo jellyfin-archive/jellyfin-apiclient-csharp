@@ -28,7 +28,7 @@ namespace Jellyfin.ApiClient.Net
         /// <param name="statusCode">The status code.</param>
         /// <param name="headers">The headers.</param>
         /// <param name="requestTime">The request time.</param>
-        private void OnResponseReceived(string url, 
+        private void OnResponseReceived(Uri url, 
             string verb, 
             HttpStatusCode statusCode, 
             Dictionary<string,string> headers,
@@ -259,7 +259,7 @@ namespace Jellyfin.ApiClient.Net
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <param name="exception">The exception.</param>
         /// <returns>Exception.</returns>
-        private Exception GetCancellationException(string url, CancellationToken cancellationToken, OperationCanceledException exception)
+        private Exception GetCancellationException(Uri url, CancellationToken cancellationToken, OperationCanceledException exception)
         {
             // If the HttpClient's timeout is reached, it will cancel the Task internally
             if (!cancellationToken.IsCancellationRequested)

@@ -7,8 +7,10 @@ using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
+using System.Web;
 
 namespace Jellyfin.ApiClient
 {
@@ -36,7 +38,7 @@ namespace Jellyfin.ApiClient
         /// </summary>
         public int? ImageQuality { get; set; }
 
-        protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, string serverAddress, string clientName, IDevice device, string applicationVersion)
+        protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, Uri serverAddress, string clientName, IDevice device, string applicationVersion)
         {
             if (logger == null)
             {
@@ -46,7 +48,7 @@ namespace Jellyfin.ApiClient
             {
                 throw new ArgumentNullException("jsonSerializer");
             }
-            if (string.IsNullOrEmpty(serverAddress))
+            if (string.IsNullOrEmpty(serverAddress.ToString()))
             {
                 throw new ArgumentNullException("serverAddress");
             }
@@ -60,7 +62,7 @@ namespace Jellyfin.ApiClient
             ServerAddress = serverAddress;
         }
 
-        protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, string serverAddress, string accessToken)
+        protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, Uri serverAddress, string accessToken)
         {
             if (logger == null)
             {
@@ -70,7 +72,7 @@ namespace Jellyfin.ApiClient
             {
                 throw new ArgumentNullException("jsonSerializer");
             }
-            if (string.IsNullOrEmpty(serverAddress))
+            if (string.IsNullOrEmpty(serverAddress.ToString()))
             {
                 throw new ArgumentNullException("serverAddress");
             }
@@ -86,14 +88,14 @@ namespace Jellyfin.ApiClient
         /// Gets the name of the server host.
         /// </summary>
         /// <value>The name of the server host.</value>
-        public string ServerAddress { get; protected set; }
+        public Uri ServerAddress { get; protected set; }
 
         /// <summary>
         /// Changes the server location.
         /// </summary>
         /// <param name="address">The address.</param>
         /// <param name="keepExistingAuth"></param>
-        public void ChangeServerLocation(string address, bool keepExistingAuth = false)
+        public void ChangeServerLocation(Uri address, bool keepExistingAuth = false)
         {
             ServerAddress = address;
 
@@ -150,11 +152,11 @@ namespace Jellyfin.ApiClient
         /// Gets the current api url based on hostname and port.
         /// </summary>
         /// <value>The API URL.</value>
-        public string ApiUrl
+        public Uri ApiUrl
         {
             get
             {
-                return ServerAddress + "/emby";
+                return new Uri(ServerAddress, new Uri("/emby"));
             }
         }
 
@@ -197,9 +199,9 @@ namespace Jellyfin.ApiClient
         /// <param name="handler">The handler.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">handler</exception>
-        public string GetApiUrl(string handler)
+        public Uri GetApiUrl(Uri handler)
         {
-            return GetApiUrl(handler, new QueryStringDictionary());
+            return GetApiUrl(handler, new NameValueCollection());
         }
 
         public void SetAuthenticationInfo(string accessToken, Guid userId)
@@ -257,11 +259,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="handler">The handler.</param>
         /// <param name="queryString">The query string.</param>
-        /// <returns>System.String.</returns>
+        /// <returns>System.Uri.</returns>
         /// <exception cref="System.ArgumentNullException">handler</exception>
-        protected string GetApiUrl(string handler, QueryStringDictionary queryString)
+        protected Uri GetApiUrl(Uri handler, NameValueCollection queryString)
         {
-            if (string.IsNullOrEmpty(handler))
+            if (string.IsNullOrEmpty(handler.ToString()))
             {
                 throw new ArgumentNullException("handler");
             }
@@ -271,10 +273,13 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("queryString");
             }
 
-            return queryString.GetUrl(ApiUrl + "/" + handler);
+            var uriBuilder = new UriBuilder(new Uri(ApiUrl, handler));
+            uriBuilder.Query = queryString.ToString();
+
+            return uriBuilder.Uri;
         }
 
-        public string GetSubtitleUrl(SubtitleDownloadOptions options)
+        public Uri GetSubtitleUrl(SubtitleDownloadOptions options)
         {
             if (options == null)
             {
@@ -293,7 +298,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("options");
             }
 
-            return GetApiUrl("Videos/" + options.ItemId + "/" + options.MediaSourceId + "/Subtitles/" + options.StreamIndex + "/Stream." + options.Format);
+            return GetApiUrl(new Uri("Videos/" + options.ItemId + "/" + options.MediaSourceId + "/Subtitles/" + options.StreamIndex + "/Stream." + options.Format));
         }
 
         /// <summary>
@@ -302,14 +307,14 @@ namespace Jellyfin.ApiClient
         /// <param name="query">The query.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">query</exception>
-        protected string GetItemListUrl(ItemQuery query)
+        protected Uri GetItemListUrl(ItemQuery query)
         {
             if (query == null)
             {
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("ParentId", query.ParentId);
 
@@ -416,7 +421,7 @@ namespace Jellyfin.ApiClient
 
             dict.AddIfNotNull("AiredDuringSeason", query.AiredDuringSeason);
 
-            return GetApiUrl("Users/" + query.UserId + "/Items", dict);
+            return GetApiUrl(new Uri("Users/" + query.UserId + "/Items"), dict);
         }
 
         /// <summary>
@@ -425,14 +430,14 @@ namespace Jellyfin.ApiClient
         /// <param name="query">The query.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">query</exception>
-        protected string GetNextUpUrl(NextUpQuery query)
+        protected Uri GetNextUpUrl(NextUpQuery query)
         {
             if (query == null)
             {
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             if (query.Fields != null)
             {
@@ -456,7 +461,7 @@ namespace Jellyfin.ApiClient
             }
             dict.AddIfNotNull("ImageTypeLimit", query.ImageTypeLimit);
             
-            return GetApiUrl("Shows/NextUp", dict);
+            return GetApiUrl(new Uri("Shows/NextUp"), dict);
         }
 
         /// <summary>
@@ -470,7 +475,7 @@ namespace Jellyfin.ApiClient
         /// or
         /// type
         /// </exception>
-        protected string GetSimilarItemListUrl(SimilarItemsQuery query, string type)
+        protected Uri GetSimilarItemListUrl(SimilarItemsQuery query, string type)
         {
             if (query == null)
             {
@@ -481,7 +486,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("type");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNull("Limit", query.Limit);
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
@@ -496,7 +501,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            return GetApiUrl(type + "/" + query.Id + "/Similar", dict);
+            return GetApiUrl(new Uri(type + "/" + query.Id + "/Similar"), dict);
         }
 
         /// <summary>
@@ -510,7 +515,7 @@ namespace Jellyfin.ApiClient
         /// or
         /// type
         /// </exception>
-        protected string GetInstantMixUrl(SimilarItemsQuery query, string type)
+        protected Uri GetInstantMixUrl(SimilarItemsQuery query, string type)
         {
             if (query == null)
             {
@@ -521,7 +526,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("type");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNull("Limit", query.Limit);
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
@@ -536,7 +541,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            return GetApiUrl(type + "/" + query.Id + "/InstantMix", dict);
+            return GetApiUrl(new Uri(type + "/" + query.Id + "/InstantMix"), dict);
         }
 
         /// <summary>
@@ -546,14 +551,14 @@ namespace Jellyfin.ApiClient
         /// <param name="query">The query.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">query</exception>
-        protected string GetItemByNameListUrl(string type, ItemsByNameQuery query)
+        protected Uri GetItemByNameListUrl(string type, ItemsByNameQuery query)
         {
             if (query == null)
             {
                 throw new ArgumentNullException("query");
             }
 
-            var dict = new QueryStringDictionary { };
+            var dict = new NameValueCollection { };
 
             dict.AddIfNotNullOrEmpty("ParentId", query.ParentId);
 
@@ -602,7 +607,7 @@ namespace Jellyfin.ApiClient
             }
             dict.AddIfNotNull("ImageTypeLimit", query.ImageTypeLimit);
             
-            return GetApiUrl(type, dict);
+            return GetApiUrl(new Uri(type), dict);
         }
 
         /// <summary>
@@ -613,7 +618,7 @@ namespace Jellyfin.ApiClient
         /// <param name="queryParams">The query params.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">options</exception>
-        private string GetImageUrl(string baseUrl, ImageOptions options, QueryStringDictionary queryParams)
+        private Uri GetImageUrl(Uri baseUrl, ImageOptions options, NameValueCollection queryParams)
         {
             if (options == null)
             {
@@ -627,7 +632,7 @@ namespace Jellyfin.ApiClient
 
             if (options.ImageIndex.HasValue)
             {
-                baseUrl += "/" + options.ImageIndex.Value;
+                baseUrl = new Uri(baseUrl, "/" + options.ImageIndex.Value);
             }
 
             queryParams.AddIfNotNull("Width", options.Width);
@@ -663,7 +668,7 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">item</exception>
-        public string GetImageUrl(BaseItemDto item, ImageOptions options)
+        public Uri GetImageUrl(BaseItemDto item, ImageOptions options)
         {
             if (item == null)
             {
@@ -680,7 +685,7 @@ namespace Jellyfin.ApiClient
             return GetImageUrl(item, options);
         }
 
-        public string GetImageUrl(ChannelInfoDto item, ImageOptions options)
+        public Uri GetImageUrl(ChannelInfoDto item, ImageOptions options)
         {
             if (item == null)
             {
@@ -704,16 +709,16 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">itemId</exception>
-        public string GetImageUrl(string itemId, ImageOptions options)
+        public Uri GetImageUrl(string itemId, ImageOptions options)
         {
             if (string.IsNullOrEmpty(itemId))
             {
                 throw new ArgumentNullException("itemId");
             }
 
-            var url = "Items/" + itemId + "/Images/" + options.ImageType;
+            var url = new Uri("Items/" + itemId + "/Images/" + options.ImageType);
 
-            return GetImageUrl(url, options, new QueryStringDictionary());
+            return GetImageUrl(url, options, new NameValueCollection());
         }
 
         /// <summary>
@@ -723,7 +728,7 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">user</exception>
-        public string GetUserImageUrl(UserDto user, ImageOptions options)
+        public Uri GetUserImageUrl(UserDto user, ImageOptions options)
         {
             if (user == null)
             {
@@ -747,16 +752,16 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">userId</exception>
-        public string GetUserImageUrl(string userId, ImageOptions options)
+        public Uri GetUserImageUrl(string userId, ImageOptions options)
         {
             if (string.IsNullOrEmpty(userId))
             {
                 throw new ArgumentNullException("userId");
             }
 
-            var url = "Users/" + userId + "/Images/" + options.ImageType;
+            var url = new Uri("Users/" + userId + "/Images/" + options.ImageType);
 
-            return GetImageUrl(url, options, new QueryStringDictionary());
+            return GetImageUrl(url, options, new NameValueCollection());
         }
 
         /// <summary>
@@ -766,7 +771,7 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">item</exception>
-        public string GetPersonImageUrl(BaseItemPerson item, ImageOptions options)
+        public Uri GetPersonImageUrl(BaseItemPerson item, ImageOptions options)
         {
             if (item == null)
             {
@@ -816,7 +821,7 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String[][].</returns>
         /// <exception cref="System.ArgumentNullException">item</exception>
-        public string[] GetBackdropImageUrls(BaseItemDto item, ImageOptions options)
+        public Uri[] GetBackdropImageUrls(BaseItemDto item, ImageOptions options)
         {
             if (item == null)
             {
@@ -846,10 +851,10 @@ namespace Jellyfin.ApiClient
 
             if (string.IsNullOrEmpty(backdropItemId))
             {
-                return new string[] { };
+                return new Uri[] { };
             }
 
-            var files = new string[backdropImageTags.Length];
+            var files = new Uri[backdropImageTags.Length];
 
             for (var i = 0; i < backdropImageTags.Length; i++)
             {
@@ -869,7 +874,7 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">item</exception>
-        public string GetLogoImageUrl(BaseItemDto item, ImageOptions options)
+        public Uri GetLogoImageUrl(BaseItemDto item, ImageOptions options)
         {
             if (item == null)
             {
@@ -896,7 +901,7 @@ namespace Jellyfin.ApiClient
             return null;
         }
 
-        public string GetThumbImageUrl(BaseItemDto item, ImageOptions options)
+        public Uri GetThumbImageUrl(BaseItemDto item, ImageOptions options)
         {
             if (item == null)
             {
@@ -930,7 +935,7 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">item</exception>
-        public string GetArtImageUrl(BaseItemDto item, ImageOptions options)
+        public Uri GetArtImageUrl(BaseItemDto item, ImageOptions options)
         {
             if (item == null)
             {
@@ -1008,21 +1013,16 @@ namespace Jellyfin.ApiClient
         /// Adds the data format.
         /// </summary>
         /// <param name="url">The URL.</param>
-        /// <returns>System.String.</returns>
-        protected string AddDataFormat(string url)
+        /// <returns>System.Uri.</returns>
+        protected Uri AddDataFormat(Uri url)
         {
             const string format = "json";
 
-            if (url.IndexOf('?') == -1)
-            {
-                url += "?format=" + format;
-            }
-            else
-            {
-                url += "&format=" + format;
-            }
-
-            return url;
+            UriBuilder uriBuilder = new UriBuilder(url);
+            NameValueCollection query = HttpUtility.ParseQueryString(uriBuilder.Query);
+            query["format"] = format;
+            uriBuilder.Query = query.ToString();
+            return uriBuilder.Uri;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -12,7 +13,7 @@ namespace Jellyfin.ApiClient.Net
         public string RequestContent { get; set; }
         public string RequestContentType { get; set; }
         public HttpHeaders RequestHeaders { get; set; }
-        public string Url { get; set; }
+        public Uri Url { get; set; }
         public Stream RequestStream { get; set; }
 
         public int Timeout { get; set; }

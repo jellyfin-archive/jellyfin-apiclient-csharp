@@ -1,21 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Collections.Specialized;
 using System.Linq;
 
 namespace Jellyfin.ApiClient
 {
     /// <summary>
-    /// Class QueryStringDictionary
+    /// Extensions for NameValueCollection
     /// </summary>
-    public class QueryStringDictionary : Dictionary<string, string>
+    public static class NameValueCollectionExtensions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="QueryStringDictionary" /> class.
+        /// Adds the specified name.
         /// </summary>
-        public QueryStringDictionary()
-            : base(StringComparer.OrdinalIgnoreCase)
+        /// <param name="name">The name.</param>
+        /// <param name="value">The value.</param>
+        public static void Add(this NameValueCollection col, string name, int value)
         {
+            col.Add(name, value.ToString());
         }
 
         /// <summary>
@@ -23,9 +25,9 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void Add(string name, int value)
+        public static void Add(this NameValueCollection col, string name, long value)
         {
-            Add(name, value.ToString(CultureInfo.InvariantCulture));
+            col.Add(name, value.ToString());
         }
 
         /// <summary>
@@ -33,19 +35,9 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void Add(string name, long value)
+        public static void Add(this NameValueCollection col, string name, double value)
         {
-            Add(name, value.ToString(CultureInfo.InvariantCulture));
-        }
-
-        /// <summary>
-        /// Adds the specified name.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="value">The value.</param>
-        public void Add(string name, double value)
-        {
-            Add(name, value.ToString(CultureInfo.InvariantCulture));
+            col.Add(name, value.ToString());
         }
 
         /// <summary>
@@ -53,11 +45,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void AddIfNotNullOrEmpty(string name, string value)
+        public static void AddIfNotNullOrEmpty(this NameValueCollection col, string name, string value)
         {
             if (!string.IsNullOrEmpty(value))
             {
-                Add(name, value);
+                col.Add(name, value);
             }
         }
 
@@ -66,11 +58,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void AddIfNotNull(string name, int? value)
+        public static void AddIfNotNull(this NameValueCollection col, string name, int? value)
         {
             if (value.HasValue)
             {
-                Add(name, value.Value);
+                col.Add(name, value.Value);
             }
         }
 
@@ -79,11 +71,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void AddIfNotNull(string name, double? value)
+        public static void AddIfNotNull(this NameValueCollection col, string name, double? value)
         {
             if (value.HasValue)
             {
-                Add(name, value.Value);
+                col.Add(name, value.Value);
             }
         }
 
@@ -92,11 +84,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void AddIfNotNull(string name, long? value)
+        public static void AddIfNotNull(this NameValueCollection col, string name, long? value)
         {
             if (value.HasValue)
             {
-                Add(name, value.Value);
+                col.Add(name, value.Value);
             }
         }
 
@@ -105,9 +97,9 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">if set to <c>true</c> [value].</param>
-        public void Add(string name, bool value)
+        public static void Add(this NameValueCollection col, string name, bool value)
         {
-            Add(name, value.ToString());
+            col.Add(name, value.ToString());
         }
 
         /// <summary>
@@ -115,11 +107,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">if set to <c>true</c> [value].</param>
-        public void AddIfNotNull(string name, bool? value)
+        public static void AddIfNotNull(this NameValueCollection col, string name, bool? value)
         {
             if (value.HasValue)
             {
-                Add(name, value.Value);
+                col.Add(name, value.Value);
             }
         }
 
@@ -129,14 +121,14 @@ namespace Jellyfin.ApiClient
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         /// <exception cref="System.ArgumentNullException">value</exception>
-        public void Add(string name, IEnumerable<int> value)
+        public static void Add(this NameValueCollection col, string name, IEnumerable<int> value)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
 
-            Add(name, string.Join(",", value.Select(v => v.ToString(CultureInfo.InvariantCulture)).ToArray()));
+            col.Add(name, string.Join(",", value.Select(v => v.ToString()).ToArray()));
         }
 
         /// <summary>
@@ -144,11 +136,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void AddIfNotNull(string name, IEnumerable<int> value)
+        public static void AddIfNotNull(this NameValueCollection col, string name, IEnumerable<int> value)
         {
             if (value != null)
             {
-                Add(name, value);
+                col.Add(name, value);
             }
         }
 
@@ -158,16 +150,14 @@ namespace Jellyfin.ApiClient
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         /// <exception cref="System.ArgumentNullException">value</exception>
-        public void Add(string name, IEnumerable<string> value)
+        public static void Add(this NameValueCollection col, string name, IEnumerable<string> value)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
 
-            string paramValue = string.Join(",", value.ToArray());
-
-            Add(name, paramValue);
+            col.Add(name, string.Join(",", value.ToArray()));
         }
 
         /// <summary>
@@ -175,11 +165,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
-        public void AddIfNotNull(string name, IEnumerable<string> value)
+        public static void AddIfNotNull(this NameValueCollection col, string name, IEnumerable<string> value)
         {
             if (value != null)
             {
-                Add(name, value);
+                col.Add(name, value);
             }
         }
 
@@ -190,16 +180,14 @@ namespace Jellyfin.ApiClient
         /// <param name="value">The value.</param>
         /// <param name="delimiter">The delimiter.</param>
         /// <exception cref="ArgumentNullException">value</exception>
-        public void Add(string name, IEnumerable<string> value, string delimiter)
+        public static void Add(this NameValueCollection col, string name, IEnumerable<string> value, string delimiter)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
 
-            string paramValue = string.Join(delimiter, value.ToArray());
-
-            Add(name, paramValue);
+            col.Add(name, string.Join(delimiter, value.ToArray()));
         }
 
         /// <summary>
@@ -208,50 +196,12 @@ namespace Jellyfin.ApiClient
         /// <param name="name">The name.</param>
         /// <param name="value">The value.</param>
         /// <param name="delimiter">The delimiter.</param>
-        public void AddIfNotNull(string name, IEnumerable<string> value, string delimiter)
+        public static void AddIfNotNull(this NameValueCollection col, string name, IEnumerable<string> value, string delimiter)
         {
             if (value != null)
             {
-                Add(name, value, delimiter);
+                col.Add(name, value, delimiter);
             }
-        }
-
-        /// <summary>
-        /// Gets the query string.
-        /// </summary>
-        /// <returns>System.String.</returns>
-        public string GetQueryString()
-        {
-            string[] queryParams = this.Select(i => string.Format("{0}={1}", i.Key, GetEncodedValue(i.Value))).ToArray();
-
-            return string.Join("&", queryParams);
-        }
-
-        /// <summary>
-        /// Gets the encoded value.
-        /// </summary>
-        /// <param name="value">The value.</param>
-        /// <returns>System.String.</returns>
-        private string GetEncodedValue(string value)
-        {
-            return value;
-        }
-
-        /// <summary>
-        /// Gets the URL.
-        /// </summary>
-        /// <param name="prefix">The prefix.</param>
-        /// <returns>System.String.</returns>
-        public string GetUrl(string prefix)
-        {
-            string query = GetQueryString();
-
-            if (string.IsNullOrEmpty(query))
-            {
-                return prefix;
-            }
-
-            return prefix + "?" + query;
         }
     }
 }

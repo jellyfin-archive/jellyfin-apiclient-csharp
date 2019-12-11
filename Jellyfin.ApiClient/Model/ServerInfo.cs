@@ -9,7 +9,7 @@ namespace Jellyfin.ApiClient.Model
     {
         public String Name { get; set; }
         public String Id { get; set; }
-        public String Address { get; set; }
+        public Uri Address { get; set; }
         public Guid UserId { get; set; }
         public String AccessToken { get; set; }
         public List<WakeOnLanInfo> WakeOnLanInfos { get; set; }
@@ -27,12 +27,12 @@ namespace Jellyfin.ApiClient.Model
 
             if (!string.IsNullOrEmpty(systemInfo.LocalAddress))
             {
-                Address = systemInfo.LocalAddress;
+                Address = new Uri(systemInfo.LocalAddress);
             }
 
             if (!string.IsNullOrEmpty(systemInfo.LocalAddress))
             {
-                Address = systemInfo.LocalAddress;
+                Address = new Uri(systemInfo.LocalAddress);
             }
 
             var fullSystemInfo = systemInfo as SystemInfo;
