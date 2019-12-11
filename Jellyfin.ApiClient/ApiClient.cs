@@ -94,7 +94,7 @@ namespace Jellyfin.ApiClient
             HttpClient.HttpResponseReceived += HttpClient_HttpResponseReceived;
         }
 
-        void HttpClient_HttpResponseReceived(object sender, HttpResponseEventArgs e)
+        void HttpClient_HttpResponseReceived(object sender, HttpWebResponse e)
         {
             if (e.StatusCode == HttpStatusCode.Unauthorized)
             {
@@ -281,7 +281,7 @@ namespace Jellyfin.ApiClient
         }
 
 
-        public Task<HttpResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<HttpWebResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken))
         {
             return HttpClient.GetResponse(new HttpRequest
             {

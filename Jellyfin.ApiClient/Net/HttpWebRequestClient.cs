@@ -17,7 +17,7 @@ namespace Jellyfin.ApiClient.Net
     /// </summary>
     public class HttpWebRequestClient : IAsyncHttpClient
     {
-        public event EventHandler<HttpResponseEventArgs> HttpResponseReceived;
+        public event EventHandler<HttpWebResponse> HttpResponseReceived;
         private readonly IHttpWebRequestFactory _requestFactory;
 
         /// <summary>
@@ -30,30 +30,14 @@ namespace Jellyfin.ApiClient.Net
         /// <param name="requestTime">The request time.</param>
         private void OnResponseReceived(Uri url, 
             string verb, 
-            HttpStatusCode statusCode, 
-            Dictionary<string,string> headers,
+            HttpWebResponse response,
             DateTime requestTime)
         {
             var duration = DateTime.Now - requestTime;
 
-            Logger.LogDebug("Received {0} status code after {1} ms from {2}: {3}", (int)statusCode, duration.TotalMilliseconds, verb, url);
+            Logger.LogDebug("Received {0} status code after {1} ms from {2}: {3}", (int)response.StatusCode, duration.TotalMilliseconds, verb, url);
 
-            if (HttpResponseReceived != null)
-            {
-                try
-                {
-                    HttpResponseReceived(this, new HttpResponseEventArgs
-                    {
-                        Url = url,
-                        StatusCode = statusCode,
-                        Headers = headers
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError("Error in HttpResponseReceived event handler", ex);
-                }
-            }
+            HttpResponseReceived?.Invoke(this, response);
         }
 
         /// <summary>
@@ -73,7 +57,7 @@ namespace Jellyfin.ApiClient.Net
             _requestFactory = requestFactory;
         }
 
-        public async Task<HttpResponse> GetResponse(HttpRequest options, bool sendFailureResponse = false)
+        public async Task<HttpWebResponse> GetResponse(HttpRequest options, bool sendFailureResponse = false)
         {
             options.CancellationToken.ThrowIfCancellationRequested();
 
@@ -117,14 +101,13 @@ namespace Jellyfin.ApiClient.Net
 
                 var httpResponse = (HttpWebResponse)response;
 
-                var headers = ConvertHeaders(response);
-                OnResponseReceived(options.Url, options.Method, httpResponse.StatusCode, headers, requestTime);
+                OnResponseReceived(options.Url, options.Method, httpResponse, requestTime);
 
                 EnsureSuccessStatusCode(httpResponse);
 
                 options.CancellationToken.ThrowIfCancellationRequested();
 
-                return GetResponse(httpResponse, headers);
+                return httpResponse;
             }
             catch (OperationCanceledException ex)
             {
@@ -143,7 +126,7 @@ namespace Jellyfin.ApiClient.Net
                         if (response != null)
                         {
                             var headers = ConvertHeaders(response);
-                            return GetResponse(response, headers);
+                            return response;
                         }
                     }
                 }
@@ -152,41 +135,11 @@ namespace Jellyfin.ApiClient.Net
             }
         }
 
-        private HttpResponse GetResponse(HttpWebResponse httpResponse, Dictionary<string,string> headers)
-        {
-            return new HttpResponse(httpResponse)
-            {
-                Content = httpResponse.GetResponseStream(),
-
-                StatusCode = httpResponse.StatusCode,
-
-                ContentType = httpResponse.ContentType,
-
-                Headers = headers,
-
-                ContentLength = GetContentLength(httpResponse),
-
-                ResponseUrl = httpResponse.ResponseUri.ToString()
-            };
-        }
-
-        private long? GetContentLength(HttpWebResponse response)
-        {
-            var length = response.ContentLength;
-
-            if (length == 0)
-            {
-                return null;
-            }
-
-            return length;
-        }
-
         public async Task<Stream> SendAsync(HttpRequest options)
         {
             var response = await GetResponse(options).ConfigureAwait(false);
 
-            return response.Content;
+            return response.GetResponseStream();
         }
 
         /// <summary>
@@ -215,7 +168,7 @@ namespace Jellyfin.ApiClient.Net
                 if (response != null)
                 {
                     httpException.StatusCode = response.StatusCode;
-                    OnResponseReceived(options.Url, options.Method, response.StatusCode, ConvertHeaders(response), requestTime);
+                    OnResponseReceived(options.Url, options.Method, response, requestTime);
                 }
 
                 return httpException;

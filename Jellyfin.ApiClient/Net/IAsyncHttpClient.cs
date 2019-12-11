@@ -2,6 +2,7 @@
 using MediaBrowser.Model.Net;
 using System;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Jellyfin.ApiClient.Net
@@ -14,7 +15,7 @@ namespace Jellyfin.ApiClient.Net
         /// <summary>
         /// Occurs when [HTTP response received].
         /// </summary>
-        event EventHandler<HttpResponseEventArgs> HttpResponseReceived;
+        event EventHandler<HttpWebResponse> HttpResponseReceived;
 
         /// <summary>
         /// Sends the asynchronous.
@@ -31,6 +32,6 @@ namespace Jellyfin.ApiClient.Net
         /// <returns>
         /// Task&lt;HttpResponse&gt;.
         /// </returns>
-        Task<HttpResponse> GetResponse(HttpRequest options, bool sendFailureResponse = false);
+        Task<HttpWebResponse> GetResponse(HttpRequest options, bool sendFailureResponse = false);
     }
 }

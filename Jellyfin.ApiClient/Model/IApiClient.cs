@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -197,7 +198,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;HttpResponse&gt;.</returns>
-        Task<HttpResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpWebResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Updates the user configuration.
