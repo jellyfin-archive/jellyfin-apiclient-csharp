@@ -158,7 +158,7 @@ namespace Jellyfin.ApiClient
         {
             get
             {
-                return new Uri(ServerAddress, new Uri("/emby"));
+                return new Uri(ServerAddress, "/emby");
             }
         }
 
@@ -300,7 +300,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("options");
             }
 
-            return GetApiUrl(new Uri("Videos/" + options.ItemId + "/" + options.MediaSourceId + "/Subtitles/" + options.StreamIndex + "/Stream." + options.Format));
+            return GetApiUrl(new Uri("Videos/" + options.ItemId + "/" + options.MediaSourceId + "/Subtitles/" + options.StreamIndex + "/Stream." + options.Format, UriKind.Relative));
         }
 
         /// <summary>
@@ -423,7 +423,7 @@ namespace Jellyfin.ApiClient
 
             dict.AddIfNotNull("AiredDuringSeason", query.AiredDuringSeason);
 
-            return GetApiUrl(new Uri("Users/" + query.UserId + "/Items"), dict);
+            return GetApiUrl(new Uri("Users/" + query.UserId + "/Items", UriKind.Relative), dict);
         }
 
         /// <summary>
@@ -463,7 +463,7 @@ namespace Jellyfin.ApiClient
             }
             dict.AddIfNotNull("ImageTypeLimit", query.ImageTypeLimit);
             
-            return GetApiUrl(new Uri("Shows/NextUp"), dict);
+            return GetApiUrl(new Uri("Shows/NextUp", UriKind.Relative), dict);
         }
 
         /// <summary>
@@ -503,7 +503,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            return GetApiUrl(new Uri(type + "/" + query.Id + "/Similar"), dict);
+            return GetApiUrl(new Uri(type + "/" + query.Id + "/Similar", UriKind.Relative), dict);
         }
 
         /// <summary>
@@ -543,7 +543,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            return GetApiUrl(new Uri(type + "/" + query.Id + "/InstantMix"), dict);
+            return GetApiUrl(new Uri(type + "/" + query.Id + "/InstantMix", UriKind.Relative), dict);
         }
 
         /// <summary>
@@ -609,7 +609,7 @@ namespace Jellyfin.ApiClient
             }
             dict.AddIfNotNull("ImageTypeLimit", query.ImageTypeLimit);
             
-            return GetApiUrl(new Uri(type), dict);
+            return GetApiUrl(new Uri(type, UriKind.Relative), dict);
         }
 
         /// <summary>
@@ -718,7 +718,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("itemId");
             }
 
-            var url = new Uri("Items/" + itemId + "/Images/" + options.ImageType);
+            var url = new Uri("Items/" + itemId + "/Images/" + options.ImageType, UriKind.Relative);
 
             return GetImageUrl(url, options, new NameValueCollection());
         }
@@ -761,7 +761,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var url = new Uri("Users/" + userId + "/Images/" + options.ImageType);
+            var url = new Uri("Users/" + userId + "/Images/" + options.ImageType, UriKind.Relative);
 
             return GetImageUrl(url, options, new NameValueCollection());
         }

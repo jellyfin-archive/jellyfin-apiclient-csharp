@@ -10,10 +10,10 @@
     <Authors>Jellyfin</Authors>
     <Company>Jellyfin</Company>
     <Description>Api libraries for connecting to Jellyfin Server.</Description>
-    <PackageIconUrl>http://www.mb3admin.com/images/mb3icons1-1.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/Jellyfin/jellyfin-apiclient-csharp</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Jellyfin/jellyfin-apiclient-csharp</RepositoryUrl>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <PackageIcon></PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>

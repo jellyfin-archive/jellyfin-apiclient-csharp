@@ -25,12 +25,12 @@ namespace Jellyfin.ApiClient.Model
 
             if (!string.IsNullOrEmpty(systemInfo.LocalAddress))
             {
-                Address = new Uri(systemInfo.LocalAddress);
+                Address = new Uri(systemInfo.LocalAddress, UriKind.Relative);
             }
 
             if (!string.IsNullOrEmpty(systemInfo.LocalAddress))
             {
-                Address = new Uri(systemInfo.LocalAddress);
+                Address = new Uri(systemInfo.LocalAddress, UriKind.Relative);
             }
         }
     }
