@@ -57,7 +57,7 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public Task ConnectAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task ConnectAsync(Uri url, CancellationToken cancellationToken = default)
         {
             var taskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -65,12 +65,12 @@ namespace Jellyfin.ApiClient.WebSocket
             {
                 _socket = new WebSocket4Net.WebSocket(url.ToString());
 
-                _socket.MessageReceived += websocket_MessageReceived;
+                _socket.MessageReceived += Websocket_MessageReceived;
 
                 _socket.Open();
 
                 _socket.Opened += (sender, args) => taskCompletionSource.TrySetResult(true);
-                _socket.Closed += _socket_Closed;
+                _socket.Closed += Socket_Closed;
             }
             catch (Exception ex)
             {
@@ -87,12 +87,9 @@ namespace Jellyfin.ApiClient.WebSocket
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        void _socket_Closed(object sender, EventArgs e)
+        void Socket_Closed(object sender, EventArgs e)
         {
-            if (Closed != null)
-            {
-                Closed(this, EventArgs.Empty);
-            }
+            Closed?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -100,12 +97,9 @@ namespace Jellyfin.ApiClient.WebSocket
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="MessageReceivedEventArgs" /> instance containing the event data.</param>
-        void websocket_MessageReceived(object sender, MessageReceivedEventArgs e)
+        void Websocket_MessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            if (OnReceive != null)
-            {
-                OnReceive(e.Message);
-            }
+            OnReceive?.Invoke(e.Message);
         }
 
         /// <summary>
@@ -128,7 +122,7 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="endOfMessage">if set to <c>true</c> [end of message].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public Task SendAsync(byte[] bytes, WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default(CancellationToken))
+        public Task SendAsync(byte[] bytes, WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default)
         {
             return Task.Run(() => _socket.Send(bytes, 0, bytes.Length), cancellationToken);
         }

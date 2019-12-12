@@ -20,7 +20,7 @@ namespace Jellyfin.ApiClient.Net
         /// <param name="port">The port.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task SendWakeOnLan(string macAddress, string ipAddress, int port, CancellationToken cancellationToken = default(CancellationToken));
+        Task SendWakeOnLan(string macAddress, string ipAddress, int port, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sends the wake on lan.
@@ -29,7 +29,7 @@ namespace Jellyfin.ApiClient.Net
         /// <param name="port">The port.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task SendWakeOnLan(string macAddress, int port, CancellationToken cancellationToken = default(CancellationToken));
+        Task SendWakeOnLan(string macAddress, int port, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the network status.

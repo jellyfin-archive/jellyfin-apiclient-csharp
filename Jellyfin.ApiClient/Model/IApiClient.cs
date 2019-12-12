@@ -12,17 +12,14 @@ using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.LiveTv;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Net;
-using MediaBrowser.Model.Notifications;
 using MediaBrowser.Model.Playlists;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Search;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Session;
-using MediaBrowser.Model.Sync;
 using MediaBrowser.Model.System;
 using MediaBrowser.Model.Tasks;
-using MediaBrowser.Model.Users;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -57,7 +54,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        Task<T> GetAsync<T>(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        Task<T> GetAsync<T>(Uri url, CancellationToken cancellationToken = default)
             where T : class;
 
         /// <summary>
@@ -66,7 +63,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="capabilities">The capabilities.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task ReportCapabilities(ClientCapabilities capabilities, CancellationToken cancellationToken = default(CancellationToken));
+        Task ReportCapabilities(ClientCapabilities capabilities, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Logouts this instance.
@@ -80,7 +77,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="userId">The user id.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{List{ItemIndex}}.</returns>
-        Task<List<ItemIndex>> GetGamePlayerIndex(string userId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<ItemIndex>> GetGamePlayerIndex(string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the index of the year.
@@ -89,7 +86,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="includeItemTypes">The include item types.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{List{ItemIndex}}.</returns>
-        Task<List<ItemIndex>> GetYearIndex(string userId, string[] includeItemTypes, CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<ItemIndex>> GetYearIndex(string userId, string[] includeItemTypes, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the critic reviews.
@@ -99,7 +96,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="startIndex">The start index.</param>
         /// <param name="limit">The limit.</param>
         /// <returns>Task{ItemReviewsResult}.</returns>
-        Task<QueryResult<ItemReview>> GetCriticReviews(string itemId, CancellationToken cancellationToken = default(CancellationToken), int? startIndex = null, int? limit = null);
+        Task<QueryResult<ItemReview>> GetCriticReviews(string itemId, CancellationToken cancellationToken = default, int? startIndex = null, int? limit = null);
 
         /// <summary>
         /// Gets the theme songs async.
@@ -109,7 +106,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="inheritFromParents">if set to <c>true</c> [inherit from parents].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ThemeMediaResult}.</returns>
-        Task<ThemeMediaResult> GetThemeSongsAsync(string userId, string itemId, bool inheritFromParents, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ThemeMediaResult> GetThemeSongsAsync(string userId, string itemId, bool inheritFromParents, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the search hints async.
@@ -136,7 +133,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="inheritFromParents">if set to <c>true</c> [inherit from parents].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ThemeMediaResult}.</returns>
-        Task<ThemeMediaResult> GetThemeVideosAsync(string userId, string itemId, bool inheritFromParents, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ThemeMediaResult> GetThemeVideosAsync(string userId, string itemId, bool inheritFromParents, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all theme media async.
@@ -146,7 +143,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="inheritFromParents">if set to <c>true</c> [inherit from parents].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{AllThemeMediaResult}.</returns>
-        Task<AllThemeMediaResult> GetAllThemeMediaAsync(string userId, string itemId, bool inheritFromParents, CancellationToken cancellationToken = default(CancellationToken));
+        Task<AllThemeMediaResult> GetAllThemeMediaAsync(string userId, string itemId, bool inheritFromParents, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Marks the notifications read.
@@ -178,7 +175,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{Stream}.</returns>
         /// <exception cref="ArgumentNullException">url</exception>
-        Task<Stream> GetImageStreamAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Stream> GetImageStreamAsync(Uri url, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the stream.
@@ -186,7 +183,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;Stream&gt;.</returns>
-        Task<Stream> GetStream(Uri url, CancellationToken cancellationToken = default(CancellationToken));
+        Task<Stream> GetStream(Uri url, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the response.
@@ -194,7 +191,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;HttpResponse&gt;.</returns>
-        Task<HttpWebResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpWebResponse> GetResponse(Uri url, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates the user configuration.
@@ -263,7 +260,7 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{UserDto[]}.</returns>
-        Task<UserDto[]> GetPublicUsersAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<UserDto[]> GetPublicUsersAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets active client sessions.
@@ -276,7 +273,7 @@ namespace Jellyfin.ApiClient.Model
         /// Gets the client session asynchronous.
         /// </summary>
         /// <returns>Task{SessionInfoDto}.</returns>
-        Task<SessionInfoDto> GetCurrentSessionAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<SessionInfoDto> GetCurrentSessionAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the item counts async.
@@ -291,7 +288,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ItemsResult}.</returns>
-        Task<QueryResult<BaseItemDto>> GetEpisodesAsync(EpisodeQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetEpisodesAsync(EpisodeQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the seasons asynchronous.
@@ -299,7 +296,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ItemsResult}.</returns>
-        Task<QueryResult<BaseItemDto>> GetSeasonsAsync(SeasonQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetSeasonsAsync(SeasonQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Queries for items
@@ -308,7 +305,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ItemsResult}.</returns>
         /// <exception cref="ArgumentNullException">query</exception>
-        Task<QueryResult<BaseItemDto>> GetItemsAsync(ItemQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetItemsAsync(ItemQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the user views.
@@ -316,7 +313,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="userId">The user identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;ItemsResult&gt;.</returns>
-        Task<QueryResult<BaseItemDto>> GetUserViews(string userId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetUserViews(string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the instant mix from item asynchronous.
@@ -331,7 +328,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ItemsResult}.</returns>
-        Task<QueryResult<BaseItemDto>> GetSimilarItemsAsync(SimilarItemsQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetSimilarItemsAsync(SimilarItemsQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the people async.
@@ -340,7 +337,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ItemsResult}.</returns>
         /// <exception cref="ArgumentNullException">userId</exception>
-        Task<QueryResult<BaseItemDto>> GetPeopleAsync(PersonsQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetPeopleAsync(PersonsQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the artists.
@@ -363,7 +360,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ItemsResult}.</returns>
-        Task<QueryResult<BaseItemDto>> GetNextUpEpisodesAsync(NextUpQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetNextUpEpisodesAsync(NextUpQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the upcoming episodes asynchronous.
@@ -397,14 +394,14 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{SystemInfo}.</returns>
-        Task<SystemInfo> GetSystemInfoAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<SystemInfo> GetSystemInfoAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the public system information asynchronous.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;PublicSystemInfo&gt;.</returns>
-        Task<PublicSystemInfo> GetPublicSystemInfoAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<PublicSystemInfo> GetPublicSystemInfoAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets a list of plugins installed on the server
@@ -676,7 +673,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="client">The client.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{BaseItemDto}.</returns>
-        Task<DisplayPreferences> GetDisplayPreferencesAsync(string id, string userId, string client, CancellationToken cancellationToken = default(CancellationToken));
+        Task<DisplayPreferences> GetDisplayPreferencesAsync(string id, string userId, string client, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates display preferences for a user
@@ -687,7 +684,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{DisplayPreferences}.</returns>
         /// <exception cref="System.ArgumentNullException">userId</exception>
-        Task UpdateDisplayPreferencesAsync(DisplayPreferences displayPreferences, string userId, string client, CancellationToken cancellationToken = default(CancellationToken));
+        Task UpdateDisplayPreferencesAsync(DisplayPreferences displayPreferences, string userId, string client, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Posts a set of data to a url, and deserializes the return stream into T
@@ -697,7 +694,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="args">The args.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        Task<T> PostAsync<T>(Uri url, NameValueCollection args, CancellationToken cancellationToken = default(CancellationToken))
+        Task<T> PostAsync<T>(Uri url, NameValueCollection args, CancellationToken cancellationToken = default)
             where T : class;
 
         /// <summary>
@@ -779,35 +776,6 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="address">The address.</param>
         /// <param name="keepExistingAuth">if set to <c>true</c> [keep existing authentication].</param>
         void ChangeServerLocation(Uri address, bool keepExistingAuth = false);
-
-        /// <summary>
-        /// Starts the receiving synchronize job updates.
-        /// </summary>
-        /// <param name="intervalMs">The interval ms.</param>
-        /// <param name="jobId">The job identifier.</param>
-        /// <returns>Task.</returns>
-        Task StartReceivingSyncJobUpdates(int intervalMs, string jobId);
-
-        /// <summary>
-        /// Stops the receiving synchronize job updates.
-        /// </summary>
-        /// <returns>Task.</returns>
-        Task StopReceivingSyncJobUpdates();
-
-        /// <summary>
-        /// Starts the receiving synchronize jobs updates.
-        /// </summary>
-        /// <param name="intervalMs">The interval ms.</param>
-        /// <param name="userId">The user identifier.</param>
-        /// <param name="targetId">The target identifier.</param>
-        /// <returns>Task.</returns>
-        Task StartReceivingSyncJobsUpdates(int intervalMs, string userId, string targetId);
-
-        /// <summary>
-        /// Stops the receiving synchronize jobs updates.
-        /// </summary>
-        /// <returns>Task.</returns>
-        Task StopReceivingSyncJobsUpdates();
 
         /// <summary>
         /// Starts the receiving session updates.
@@ -921,7 +889,7 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{LiveTvInfo}.</returns>
-        Task<LiveTvInfo> GetLiveTvInfoAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<LiveTvInfo> GetLiveTvInfoAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv channels asynchronous.
@@ -929,7 +897,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{LiveTvInfo}.</returns>
-        Task<QueryResult<ChannelInfoDto>> GetLiveTvChannelsAsync(LiveTvChannelQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<ChannelInfoDto>> GetLiveTvChannelsAsync(LiveTvChannelQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv channel asynchronous.
@@ -938,7 +906,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="userId">The user identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ChannelInfoDto}.</returns>
-        Task<ChannelInfoDto> GetLiveTvChannelAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ChannelInfoDto> GetLiveTvChannelAsync(string id, string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv recordings asynchronous.
@@ -946,7 +914,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{RecordingInfoDto}}.</returns>
-        Task<QueryResult<BaseItemDto>> GetLiveTvRecordingsAsync(RecordingQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetLiveTvRecordingsAsync(RecordingQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv recording asynchronous.
@@ -955,7 +923,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="userId">The user identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{RecordingInfoDto}.</returns>
-        Task<BaseItemDto> GetLiveTvRecordingAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<BaseItemDto> GetLiveTvRecordingAsync(string id, string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv recording groups asynchronous.
@@ -963,7 +931,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{RecordingGroupDto}}.</returns>
-        Task<QueryResult<BaseItemDto>> GetLiveTvRecordingGroupsAsync(RecordingGroupQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetLiveTvRecordingGroupsAsync(RecordingGroupQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv recording group asynchronous.
@@ -972,7 +940,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="userId">The user identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{RecordingGroupDto}.</returns>
-        Task<BaseItemDto> GetLiveTvRecordingGroupAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<BaseItemDto> GetLiveTvRecordingGroupAsync(string id, string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv timers asynchronous.
@@ -980,7 +948,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{TimerInfoDto}}.</returns>
-        Task<QueryResult<TimerInfoDto>> GetLiveTvTimersAsync(TimerQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<TimerInfoDto>> GetLiveTvTimersAsync(TimerQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv programs asynchronous.
@@ -988,7 +956,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{ProgramInfoDto}}.</returns>
-        Task<QueryResult<BaseItemDto>> GetLiveTvProgramsAsync(ProgramQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetLiveTvProgramsAsync(ProgramQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv program asynchronous.
@@ -997,7 +965,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="userId">The user identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ProgramInfoDto}.</returns>
-        Task<BaseItemDto> GetLiveTvProgramAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<BaseItemDto> GetLiveTvProgramAsync(string id, string userId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the recommended live tv programs asynchronous.
@@ -1005,7 +973,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{ProgramInfoDto}}.</returns>
-        Task<QueryResult<BaseItemDto>> GetRecommendedLiveTvProgramsAsync(RecommendedProgramQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetRecommendedLiveTvProgramsAsync(RecommendedProgramQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates the live tv timer asynchronous.
@@ -1013,7 +981,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="timer">The timer.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task CreateLiveTvTimerAsync(BaseTimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken));
+        Task CreateLiveTvTimerAsync(BaseTimerInfoDto timer, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates the live tv timer asynchronous.
@@ -1021,7 +989,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="timer">The timer.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task UpdateLiveTvTimerAsync(TimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken));
+        Task UpdateLiveTvTimerAsync(TimerInfoDto timer, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates the live tv series timer asynchronous.
@@ -1029,7 +997,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="timer">The timer.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task CreateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken));
+        Task CreateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Updates the live tv series timer asynchronous.
@@ -1037,7 +1005,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="timer">The timer.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task UpdateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken));
+        Task UpdateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv timer asynchronous.
@@ -1045,7 +1013,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="id">The identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{TimerInfoDto}.</returns>
-        Task<TimerInfoDto> GetLiveTvTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken));
+        Task<TimerInfoDto> GetLiveTvTimerAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv series timers asynchronous.
@@ -1053,7 +1021,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{SeriesTimerInfoDto}}.</returns>
-        Task<QueryResult<SeriesTimerInfoDto>> GetLiveTvSeriesTimersAsync(SeriesTimerQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<SeriesTimerInfoDto>> GetLiveTvSeriesTimersAsync(SeriesTimerQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv series timer asynchronous.
@@ -1061,7 +1029,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="id">The identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{SeriesTimerInfoDto}.</returns>
-        Task<SeriesTimerInfoDto> GetLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken));
+        Task<SeriesTimerInfoDto> GetLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cancels the live tv timer asynchronous.
@@ -1069,7 +1037,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="id">The identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task CancelLiveTvTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken));
+        Task CancelLiveTvTimerAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cancels the live tv series timer asynchronous.
@@ -1077,21 +1045,21 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="id">The identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task CancelLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken));
+        Task CancelLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the default timer information.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{SeriesTimerInfoDto}.</returns>
-        Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(CancellationToken cancellationToken = default(CancellationToken));
+        Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the live tv guide information.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{GuideInfo}.</returns>
-        Task<GuideInfo> GetLiveTvGuideInfo(CancellationToken cancellationToken = default(CancellationToken));
+        Task<GuideInfo> GetLiveTvGuideInfo(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the default timer information.
@@ -1099,7 +1067,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="programId">The program identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{SeriesTimerInfoDto}.</returns>
-        Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(string programId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(string programId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the channel features.
@@ -1107,7 +1075,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="channelId">The channel identifier.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ChannelFeatures}.</returns>
-        Task<ChannelFeatures> GetChannelFeatures(string channelId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ChannelFeatures> GetChannelFeatures(string channelId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the channel items.
@@ -1115,7 +1083,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{BaseItemDto}}.</returns>
-        Task<QueryResult<BaseItemDto>> GetChannelItems(ChannelItemQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetChannelItems(ChannelItemQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the channels.
@@ -1123,7 +1091,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{BaseItemDto}}.</returns>
-        Task<QueryResult<BaseItemDto>> GetChannels(ChannelQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetChannels(ChannelQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the latest channel items.
@@ -1131,7 +1099,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="query">The query.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{QueryResult{BaseItemDto}}.</returns>
-        Task<QueryResult<BaseItemDto>> GetLatestChannelItems(AllChannelMediaQuery query, CancellationToken cancellationToken = default(CancellationToken));
+        Task<QueryResult<BaseItemDto>> GetLatestChannelItems(AllChannelMediaQuery query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates the playlist.
@@ -1174,7 +1142,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
         Task SendContextMessageAsync(string itemType, string itemId, string itemName, string context,
-            CancellationToken cancellationToken = default(CancellationToken));
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the content upload history.
@@ -1192,7 +1160,7 @@ namespace Jellyfin.ApiClient.Model
         /// <returns>Task.</returns>
         Task UploadFile(Stream stream,
             LocalFileInfo file,
-            CancellationToken cancellationToken = default(CancellationToken));
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the devices options options.

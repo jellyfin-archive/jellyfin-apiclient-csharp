@@ -2,9 +2,7 @@
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Library;
 using MediaBrowser.Model.LiveTv;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Jellyfin.ApiClient.Model.Dto
 {

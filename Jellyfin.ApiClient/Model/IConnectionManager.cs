@@ -1,5 +1,4 @@
-﻿using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Dto;
+﻿using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Events;
 using MediaBrowser.Model.Session;
 using System;
@@ -65,7 +64,7 @@ namespace Jellyfin.ApiClient.Model
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;ConnectionResult&gt;.</returns>
-        Task<ConnectionResult> Connect(CancellationToken cancellationToken = default(CancellationToken));
+        Task<ConnectionResult> Connect(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Connects the specified API client.
@@ -73,7 +72,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="apiClient">The API client.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;ConnectionResult&gt;.</returns>
-        Task<ConnectionResult> Connect(IApiClient apiClient, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ConnectionResult> Connect(IApiClient apiClient, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Connects the specified server.
@@ -81,7 +80,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="server">The server.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;ConnectionResult&gt;.</returns>
-        Task<ConnectionResult> Connect(ServerInfo server, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ConnectionResult> Connect(ServerInfo server, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Connects the specified server.
@@ -90,7 +89,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;ConnectionResult&gt;.</returns>
-        Task<ConnectionResult> Connect(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ConnectionResult> Connect(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Connects the specified server.
@@ -98,7 +97,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="address">The address.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;ConnectionResult&gt;.</returns>
-        Task<ConnectionResult> Connect(Uri address, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ConnectionResult> Connect(Uri address, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Logouts this instance.
@@ -122,6 +121,6 @@ namespace Jellyfin.ApiClient.Model
         /// Gets the available servers.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
-        Task<List<ServerInfo>> GetAvailableServers(CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<ServerInfo>> GetAvailableServers(CancellationToken cancellationToken = default);
     }
 }

@@ -7,11 +7,9 @@ using MediaBrowser.Model.Events;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Session;
 using MediaBrowser.Model.System;
-using MediaBrowser.Model.Users;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,8 +63,6 @@ namespace Jellyfin.ApiClient
             ApplicationName = applicationName;
             ApiClients = new Dictionary<string, IApiClient>(StringComparer.OrdinalIgnoreCase);
             SaveLocalCredentials = true;
-
-            var jsonSerializer = new NewtonsoftJsonSerializer();
         }
 
         public IJsonSerializer JsonSerializer = new NewtonsoftJsonSerializer();
@@ -75,9 +71,8 @@ namespace Jellyfin.ApiClient
 
         private IApiClient GetOrAddApiClient(ServerInfo server)
         {
-            IApiClient apiClient;
 
-            if (!ApiClients.TryGetValue(server.Id, out apiClient))
+            if (!ApiClients.TryGetValue(server.Id, out IApiClient apiClient))
             {
                 var address = server.Address;
 
@@ -131,7 +126,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<List<ServerInfo>> GetAvailableServers(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<List<ServerInfo>> GetAvailableServers(CancellationToken cancellationToken = default)
         {
             var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
 
@@ -184,9 +179,6 @@ namespace Jellyfin.ApiClient
         {
             if (!string.IsNullOrWhiteSpace(info.Address) && !string.IsNullOrWhiteSpace(info.EndpointAddress))
             {
-                // Determine the port, if any
-                var parts = new Uri(info.Address).Port;
-
                 var uriBuilder = new UriBuilder(info.EndpointAddress.Split(':').First())
                 {
                     Port = new Uri(info.Address).Port
@@ -200,7 +192,7 @@ namespace Jellyfin.ApiClient
             return null;
         }
 
-        public async Task<ConnectionResult> Connect(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ConnectionResult> Connect(CancellationToken cancellationToken = default)
         {
             var servers = await GetAvailableServers(cancellationToken).ConfigureAwait(false);
 
@@ -255,12 +247,12 @@ namespace Jellyfin.ApiClient
         /// <summary>
         /// Attempts to connect to a server
         /// </summary>
-        public Task<ConnectionResult> Connect(ServerInfo server, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<ConnectionResult> Connect(ServerInfo server, CancellationToken cancellationToken = default)
         {
             return Connect(server, new ConnectionOptions(), cancellationToken);
         }
 
-        public async Task<ConnectionResult> Connect(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ConnectionResult> Connect(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(server.Address.ToString()))
             {
@@ -319,7 +311,7 @@ namespace Jellyfin.ApiClient
             Connected?.Invoke(this, new GenericEventArgs<ConnectionResult>(result));
         }
 
-        public Task<ConnectionResult> Connect(IApiClient apiClient, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<ConnectionResult> Connect(IApiClient apiClient, CancellationToken cancellationToken = default)
         {
             var client = (ApiClient)apiClient;
             return Connect(client.ServerInfo, cancellationToken);
@@ -424,7 +416,7 @@ namespace Jellyfin.ApiClient
             return ApiClients.Values.OfType<ApiClient>().FirstOrDefault(i => string.Equals(i.ServerInfo.Id, serverId, StringComparison.OrdinalIgnoreCase));
         }
 
-        public async Task<ConnectionResult> Connect(Uri address, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ConnectionResult> Connect(Uri address, CancellationToken cancellationToken = default)
         {
             address = NormalizeAddress(address);
 
@@ -501,19 +493,13 @@ namespace Jellyfin.ApiClient
             // TODO: Create a separate property for this
             if (options.UpdateDateLastAccessed)
             {
-                if (LocalUserSignIn != null)
-                {
-                    LocalUserSignIn(this, new GenericEventArgs<UserDto>(user));
-                }
+                LocalUserSignIn?.Invoke(this, new GenericEventArgs<UserDto>(user));
             }
         }
 
         private void OnLocalUserSignout(IApiClient apiClient)
         {
-            if (LocalUserSignOut != null)
-            {
-                LocalUserSignOut(this, new GenericEventArgs<IApiClient>(apiClient));
-            }
+            LocalUserSignOut?.Invoke(this, new GenericEventArgs<IApiClient>(apiClient));
         }
 
         public async Task Logout()

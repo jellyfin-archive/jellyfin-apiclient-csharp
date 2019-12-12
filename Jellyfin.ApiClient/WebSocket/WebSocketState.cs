@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Jellyfin.ApiClient.WebSocket
+﻿namespace Jellyfin.ApiClient.WebSocket
 {
     /// <summary>
     /// Enum WebSocketState

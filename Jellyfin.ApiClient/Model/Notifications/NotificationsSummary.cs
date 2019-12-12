@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Jellyfin.ApiClient.Model.Notifications
+﻿namespace Jellyfin.ApiClient.Model.Notifications
 {
     public class NotificationsSummary
     {

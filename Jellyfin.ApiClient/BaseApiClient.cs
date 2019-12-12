@@ -4,7 +4,6 @@ using Jellyfin.ApiClient.Model.Querying;
 using Jellyfin.ApiClient.Net;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.LiveTv;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
@@ -42,21 +41,13 @@ namespace Jellyfin.ApiClient
 
         protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, Uri serverAddress, string clientName, IDevice device, string applicationVersion)
         {
-            if (logger == null)
-            {
-                throw new ArgumentNullException("logger");
-            }
-            if (jsonSerializer == null)
-            {
-                throw new ArgumentNullException("jsonSerializer");
-            }
             if (string.IsNullOrEmpty(serverAddress.ToString()))
             {
                 throw new ArgumentNullException("serverAddress");
             }
 
-            JsonSerializer = jsonSerializer;
-            Logger = logger;
+            JsonSerializer = jsonSerializer ?? throw new ArgumentNullException("jsonSerializer");
+            Logger = logger ?? throw new ArgumentNullException("logger");
 
             ClientName = clientName;
             Device = device;
@@ -66,21 +57,13 @@ namespace Jellyfin.ApiClient
 
         protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, Uri serverAddress, string accessToken)
         {
-            if (logger == null)
-            {
-                throw new ArgumentNullException("logger");
-            }
-            if (jsonSerializer == null)
-            {
-                throw new ArgumentNullException("jsonSerializer");
-            }
             if (string.IsNullOrEmpty(serverAddress.ToString()))
             {
                 throw new ArgumentNullException("serverAddress");
             }
 
-            JsonSerializer = jsonSerializer;
-            Logger = logger;
+            JsonSerializer = jsonSerializer ?? throw new ArgumentNullException("jsonSerializer");
+            Logger = logger ?? throw new ArgumentNullException("logger");
 
             AccessToken = accessToken;
             ServerAddress = serverAddress;
@@ -275,8 +258,10 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("queryString");
             }
 
-            var uriBuilder = new UriBuilder(new Uri(ApiUrl, handler));
-            uriBuilder.Query = queryString.ToString();
+            var uriBuilder = new UriBuilder(new Uri(ApiUrl, handler))
+            {
+                Query = queryString.ToString()
+            };
 
             return uriBuilder.Uri;
         }

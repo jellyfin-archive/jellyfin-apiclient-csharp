@@ -1,5 +1,4 @@
 ﻿using Jellyfin.ApiClient.Model;
-using Jellyfin.ApiClient.Net;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
@@ -9,7 +8,6 @@ using MediaBrowser.Model.Users;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,11 +29,6 @@ namespace Jellyfin.ApiClient.Playback
             _logger = logger;
         }
 
-        public PlaybackManager(IDevice device, ILogger logger, INetworkConnection network)
-            : this(device, logger)
-        {
-        }
-
         /// <summary>
         /// Gets the pre playback selectable audio streams.
         /// </summary>
@@ -44,7 +37,7 @@ namespace Jellyfin.ApiClient.Playback
         /// <returns>Task&lt;IEnumerable&lt;MediaStream&gt;&gt;.</returns>
         public async Task<IEnumerable<MediaStream>> GetPrePlaybackSelectableAudioStreams(string serverId, VideoOptions options)
         {
-            var info = await GetVideoStreamInfoInternal(serverId, options).ConfigureAwait(false);
+            var info = await GetVideoStreamInfoInternal(options).ConfigureAwait(false);
 
             return info.GetSelectableAudioStreams();
         }
@@ -57,7 +50,7 @@ namespace Jellyfin.ApiClient.Playback
         /// <returns>Task&lt;IEnumerable&lt;MediaStream&gt;&gt;.</returns>
         public async Task<IEnumerable<MediaStream>> GetPrePlaybackSelectableSubtitleStreams(string serverId, VideoOptions options)
         {
-            var info = await GetVideoStreamInfoInternal(serverId, options).ConfigureAwait(false);
+            var info = await GetVideoStreamInfoInternal(options).ConfigureAwait(false);
 
             return info.GetSelectableSubtitleStreams();
         }
@@ -192,7 +185,7 @@ namespace Jellyfin.ApiClient.Playback
             //    options.MediaSources = currentInfo.AllMediaSources.ToArray();
             //}
 
-            var streamInfo = await GetVideoStreamInfoInternal(serverId, options).ConfigureAwait(false);
+            var streamInfo = await GetVideoStreamInfoInternal(options).ConfigureAwait(false);
             streamInfo.PlaySessionId = currentInfo.PlaySessionId;
             //streamInfo.AllMediaSources = currentInfo.AllMediaSources;
             return streamInfo;
@@ -233,7 +226,7 @@ namespace Jellyfin.ApiClient.Playback
                 playSessionId = playbackInfo.PlaySessionId;
             }
 
-            var streamInfo = await GetVideoStreamInfoInternal(serverId, options).ConfigureAwait(false);
+            var streamInfo = await GetVideoStreamInfoInternal(options).ConfigureAwait(false);
 
             if (!isOffline)
             {
@@ -256,7 +249,7 @@ namespace Jellyfin.ApiClient.Playback
             return streamInfo;
         }
 
-        private Task<StreamInfo> GetVideoStreamInfoInternal(string serverId, VideoOptions options)
+        private Task<StreamInfo> GetVideoStreamInfoInternal(VideoOptions options)
         {
             var streamBuilder = GetStreamBuilder();
 
@@ -346,7 +339,7 @@ namespace Jellyfin.ApiClient.Playback
         {
             if (isOffline)
             {
-                var action = new UserAction
+                var _ = new UserAction
                 {
                     Date = DateTime.UtcNow,
                     ItemId = info.ItemId,

@@ -91,8 +91,7 @@ namespace Jellyfin.ApiClient.Net
         /// </returns>
         private bool IsNetworkAvailable()
         {
-            return true;
-            //return IsNetworkAvailable(0);
+            return IsNetworkAvailable(0);
         }
 
         /// <summary>

@@ -29,7 +29,7 @@ namespace Jellyfin.ApiClient
             _logger = logger;
         }
 
-        public Task<List<ServerDiscoveryInfo>> FindServers(int timeoutMs, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<List<ServerDiscoveryInfo>> FindServers(int timeoutMs, CancellationToken cancellationToken = default)
         {
             var taskCompletionSource = new TaskCompletionSource<List<ServerDiscoveryInfo>>();
             var serversFound = new ConcurrentBag<ServerDiscoveryInfo>();

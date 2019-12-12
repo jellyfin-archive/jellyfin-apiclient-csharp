@@ -1,7 +1,6 @@
 ﻿using Jellyfin.ApiClient.Model;
 using Jellyfin.ApiClient.Net;
 using Jellyfin.ApiClient.WebSocket;
-using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Events;
@@ -9,7 +8,6 @@ using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Session;
-using MediaBrowser.Model.Sync;
 using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Updates;
 using Microsoft.Extensions.Logging;
@@ -115,7 +113,7 @@ namespace Jellyfin.ApiClient
 
                     socket.OnReceiveBytes = OnMessageReceived;
                     socket.OnReceive = OnMessageReceived;
-                    socket.Closed += _currentWebSocket_Closed;
+                    socket.Closed += CurrentWebSocket_Closed;
 
                     //try
                     //{
@@ -158,14 +156,11 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
-        void _currentWebSocket_Closed(object sender, EventArgs e)
+        void CurrentWebSocket_Closed(object sender, EventArgs e)
         {
             Logger.LogWarning("Web socket connection closed.");
 
-            if (WebSocketClosed != null)
-            {
-                WebSocketClosed(this, EventArgs.Empty);
-            }
+            WebSocketClosed?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -213,7 +208,7 @@ namespace Jellyfin.ApiClient
         /// <param name="context">An optional, client-specific value indicating the area or section being browsed</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public Task SendContextMessageAsync(string itemType, string itemId, string itemName, string context, CancellationToken cancellationToken = default(CancellationToken))
+        public Task SendContextMessageAsync(string itemType, string itemId, string itemName, string context, CancellationToken cancellationToken = default)
         {
             var vals = new List<string>
                 {
@@ -247,37 +242,6 @@ namespace Jellyfin.ApiClient
         public Task StopReceivingSessionUpdates()
         {
             return SendWebSocketMessage("SessionsStop", string.Empty);
-        }
-
-        public Task StartReceivingSyncJobsUpdates(int intervalMs, string userId, string targetId)
-        {
-            var options = new List<string>();
-            options.Add(intervalMs.ToString(CultureInfo.InvariantCulture));
-            options.Add(intervalMs.ToString(CultureInfo.InvariantCulture));
-            options.Add(userId ?? string.Empty);
-            options.Add(targetId ?? string.Empty);
-
-            return SendWebSocketMessage("SyncJobsStart", string.Join(",", options.ToArray()));
-        }
-
-        public Task StopReceivingSyncJobsUpdates()
-        {
-            return SendWebSocketMessage("SyncJobsStop", string.Empty);
-        }
-
-        public Task StartReceivingSyncJobUpdates(int intervalMs, string jobId)
-        {
-            var options = new List<string>();
-            options.Add(intervalMs.ToString(CultureInfo.InvariantCulture));
-            options.Add(intervalMs.ToString(CultureInfo.InvariantCulture));
-            options.Add(jobId ?? string.Empty);
-
-            return SendWebSocketMessage("SyncJobStart", string.Join(",", options.ToArray()));
-        }
-
-        public Task StopReceivingSyncJobUpdates()
-        {
-            return SendWebSocketMessage("SyncJobStop", string.Empty);
         }
 
         protected override void Dispose(bool disposing)
@@ -523,13 +487,10 @@ namespace Jellyfin.ApiClient
             {
                 if (args.KnownCommandType.Value == GeneralCommandType.DisplayContent)
                 {
-                    string itemId;
-                    string itemName;
-                    string itemType;
 
-                    args.Command.Arguments.TryGetValue("ItemId", out itemId);
-                    args.Command.Arguments.TryGetValue("ItemName", out itemName);
-                    args.Command.Arguments.TryGetValue("ItemType", out itemType);
+                    args.Command.Arguments.TryGetValue("ItemId", out string itemId);
+                    args.Command.Arguments.TryGetValue("ItemName", out string itemName);
+                    args.Command.Arguments.TryGetValue("ItemType", out string itemType);
 
                     FireEvent(BrowseCommand, this, new GenericEventArgs<BrowseRequest>
                     {
@@ -544,13 +505,10 @@ namespace Jellyfin.ApiClient
                 }
                 if (args.KnownCommandType.Value == GeneralCommandType.DisplayMessage)
                 {
-                    string header;
-                    string text;
-                    string timeoutMs;
 
-                    args.Command.Arguments.TryGetValue("Header", out header);
-                    args.Command.Arguments.TryGetValue("Text", out text);
-                    args.Command.Arguments.TryGetValue("TimeoutMs", out timeoutMs);
+                    args.Command.Arguments.TryGetValue("Header", out string header);
+                    args.Command.Arguments.TryGetValue("Text", out string text);
+                    args.Command.Arguments.TryGetValue("TimeoutMs", out string timeoutMs);
 
                     long? timeoutVal = string.IsNullOrEmpty(timeoutMs) ? (long?)null : long.Parse(timeoutMs);
 
@@ -567,9 +525,8 @@ namespace Jellyfin.ApiClient
                 }
                 if (args.KnownCommandType.Value == GeneralCommandType.SetVolume)
                 {
-                    string volume;
 
-                    args.Command.Arguments.TryGetValue("Volume", out volume);
+                    args.Command.Arguments.TryGetValue("Volume", out string volume);
 
                     FireEvent(SetVolumeCommand, this, new GenericEventArgs<int>
                     {
@@ -579,9 +536,8 @@ namespace Jellyfin.ApiClient
                 }
                 if (args.KnownCommandType.Value == GeneralCommandType.SetAudioStreamIndex)
                 {
-                    string index;
 
-                    args.Command.Arguments.TryGetValue("Index", out index);
+                    args.Command.Arguments.TryGetValue("Index", out string index);
 
                     FireEvent(SetAudioStreamIndexCommand, this, new GenericEventArgs<int>
                     {
@@ -591,9 +547,8 @@ namespace Jellyfin.ApiClient
                 }
                 if (args.KnownCommandType.Value == GeneralCommandType.SetSubtitleStreamIndex)
                 {
-                    string index;
 
-                    args.Command.Arguments.TryGetValue("Index", out index);
+                    args.Command.Arguments.TryGetValue("Index", out string index);
 
                     FireEvent(SetSubtitleStreamIndexCommand, this, new GenericEventArgs<int>
                     {
@@ -603,9 +558,8 @@ namespace Jellyfin.ApiClient
                 }
                 if (args.KnownCommandType.Value == GeneralCommandType.SendString)
                 {
-                    string val;
 
-                    args.Command.Arguments.TryGetValue("String", out val);
+                    args.Command.Arguments.TryGetValue("String", out string val);
 
                     FireEvent(SendStringCommand, this, new GenericEventArgs<string>
                     {

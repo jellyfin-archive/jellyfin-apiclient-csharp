@@ -1,15 +1,12 @@
 ﻿using Jellyfin.ApiClient.Net;
-using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Events;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Session;
-using MediaBrowser.Model.Sync;
 using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Updates;
 using System;
-using System.Collections.Generic;
 
 namespace Jellyfin.ApiClient.Model
 {

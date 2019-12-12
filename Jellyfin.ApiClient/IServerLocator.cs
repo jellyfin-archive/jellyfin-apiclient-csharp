@@ -10,6 +10,6 @@ namespace Jellyfin.ApiClient
         /// <summary>
         /// Attemps to discover the server within a local network
         /// </summary>
-        Task<List<ServerDiscoveryInfo>> FindServers(int timeoutMs, CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<ServerDiscoveryInfo>> FindServers(int timeoutMs, CancellationToken cancellationToken = default);
     }
 }

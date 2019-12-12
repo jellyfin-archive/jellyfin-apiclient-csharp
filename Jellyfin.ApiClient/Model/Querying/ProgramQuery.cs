@@ -1,8 +1,6 @@
 ﻿using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Querying;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Jellyfin.ApiClient.Model.Querying
 {

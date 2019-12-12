@@ -1,10 +1,4 @@
-﻿using MediaBrowser.Model.Devices;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Jellyfin.ApiClient.Model
+﻿namespace Jellyfin.ApiClient.Model
 {
     public interface IDevice
     {

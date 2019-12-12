@@ -61,7 +61,7 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public async Task ConnectAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task ConnectAsync(Uri url, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -108,10 +108,7 @@ namespace Jellyfin.ApiClient.WebSocket
                     break;
                 }
 
-                if (OnReceiveBytes != null)
-                {
-                    OnReceiveBytes(bytes);
-                }
+                OnReceiveBytes?.Invoke(bytes);
             }
         }
 
@@ -145,15 +142,14 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="endOfMessage">if set to <c>true</c> [end of message].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public async Task SendAsync(byte[] bytes, WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task SendAsync(byte[] bytes, WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default)
         {
             await _sendResource.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                System.Net.WebSockets.WebSocketMessageType nativeType;
 
-                if (!Enum.TryParse(type.ToString(), true, out nativeType))
+                if (!Enum.TryParse(type.ToString(), true, out System.Net.WebSockets.WebSocketMessageType nativeType))
                 {
                     _logger.LogWarning("Unrecognized WebSocketMessageType: {0}", type.ToString());
                 }
@@ -181,9 +177,8 @@ namespace Jellyfin.ApiClient.WebSocket
                     return WebSocketState.None;
                 }
 
-                WebSocketState commonState;
 
-                if (!Enum.TryParse(_client.State.ToString(), true, out commonState))
+                if (!Enum.TryParse(_client.State.ToString(), true, out WebSocketState commonState))
                 {
                     _logger.LogWarning("Unrecognized WebSocketState: {0}", _client.State.ToString());
                 }
@@ -197,10 +192,7 @@ namespace Jellyfin.ApiClient.WebSocket
         /// </summary>
         void OnClosed()
         {
-            if (Closed != null)
-            {
-                Closed(this, EventArgs.Empty);
-            }
+            Closed?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>

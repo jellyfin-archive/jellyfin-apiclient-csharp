@@ -1,5 +1,4 @@
-﻿using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Net;
+﻿using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -122,10 +121,8 @@ namespace Jellyfin.ApiClient.Net
                     var webException = ex as WebException ?? ex.InnerException as WebException;
                     if (webException != null)
                     {
-                        var response = webException.Response as HttpWebResponse;
-                        if (response != null)
+                        if (webException.Response is HttpWebResponse response)
                         {
-                            var headers = ConvertHeaders(response);
                             return response;
                         }
                     }
@@ -142,18 +139,6 @@ namespace Jellyfin.ApiClient.Net
             return response.GetResponseStream();
         }
 
-        /// <summary>
-        /// Converts the headers.
-        /// </summary>
-        /// <param name="response">The response.</param>
-        /// <returns>Dictionary&lt;System.String, System.String&gt;.</returns>
-        private Dictionary<string, string> ConvertHeaders(WebResponse response)
-        {
-            var headers = response.Headers;
-
-            return headers.Cast<string>().ToDictionary(p => p, p => headers[p]);
-        }
-
         private Exception GetExceptionToThrow(Exception ex, HttpRequest options, DateTime requestTime)
         {
             var webException = ex as WebException ?? ex.InnerException as WebException;
@@ -163,9 +148,8 @@ namespace Jellyfin.ApiClient.Net
                 Logger.LogError("Error getting response from " + options.Url, ex);
 
                 var httpException = new HttpException(ex.Message, ex);
-                
-                var response = webException.Response as HttpWebResponse;
-                if (response != null)
+
+                if (webException.Response is HttpWebResponse response)
                 {
                     httpException.StatusCode = response.StatusCode;
                     OnResponseReceived(options.Url, options.Method, response, requestTime);

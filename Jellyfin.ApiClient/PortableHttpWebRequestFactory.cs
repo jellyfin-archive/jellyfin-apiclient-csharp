@@ -19,7 +19,7 @@ namespace Jellyfin.ApiClient
 
         public void SetContentLength(HttpWebRequest request, long length)
         {
-            //request.Headers["Content-Length"] = length.ToString(CultureInfo.InvariantCulture);
+            request.Headers["Content-Length"] = length.ToString();
         }
 
         public Task<WebResponse> GetResponseAsync(HttpWebRequest request, int timeoutMs)

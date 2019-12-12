@@ -1,6 +1,4 @@
-﻿using MediaBrowser.Model.ApiClient;
-using MediaBrowser.Model.Extensions;
-using MediaBrowser.Model.System;
+﻿using MediaBrowser.Model.Extensions;
 using System;
 using System.Collections.Generic;
 
@@ -9,7 +7,6 @@ namespace Jellyfin.ApiClient.Model
     public class ServerCredentials
     {
         public List<ServerInfo> Servers { get; set; }
-
         public string ConnectUserId { get; set; }
         public string ConnectAccessToken { get; set; }
 

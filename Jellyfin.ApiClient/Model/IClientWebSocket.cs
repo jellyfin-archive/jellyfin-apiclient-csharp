@@ -1,5 +1,4 @@
 ﻿using Jellyfin.ApiClient.WebSocket;
-using MediaBrowser.Model.Net;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

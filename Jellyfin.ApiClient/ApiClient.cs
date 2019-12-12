@@ -4,7 +4,6 @@ using Jellyfin.ApiClient.Model.Notifications;
 using Jellyfin.ApiClient.Model.Querying;
 using Jellyfin.ApiClient.Net;
 using MediaBrowser.Controller.Authentication;
-using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Channels;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Devices;
@@ -15,25 +14,20 @@ using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.LiveTv;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Net;
-using MediaBrowser.Model.Notifications;
 using MediaBrowser.Model.Playlists;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Search;
 using MediaBrowser.Model.Session;
-using MediaBrowser.Model.Sync;
 using MediaBrowser.Model.System;
 using MediaBrowser.Model.Tasks;
-using MediaBrowser.Model.Users;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -271,7 +265,7 @@ namespace Jellyfin.ApiClient
             return url;
         }
 
-        public Task<Stream> GetStream(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<Stream> GetStream(Uri url, CancellationToken cancellationToken = default)
         {
             return SendAsync(new HttpRequest
             {
@@ -283,7 +277,7 @@ namespace Jellyfin.ApiClient
         }
 
 
-        public Task<HttpWebResponse> GetResponse(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<HttpWebResponse> GetResponse(Uri url, CancellationToken cancellationToken = default)
         {
             return HttpClient.GetResponse(new HttpRequest
             {
@@ -301,7 +295,7 @@ namespace Jellyfin.ApiClient
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{Stream}.</returns>
         /// <exception cref="System.ArgumentNullException">url</exception>
-        public Task<Stream> GetImageStreamAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<Stream> GetImageStreamAsync(Uri url, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(url.ToString()))
             {
@@ -430,7 +424,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<UserDto[]> GetPublicUsersAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<UserDto[]> GetPublicUsersAsync(CancellationToken cancellationToken = default)
         {
             var url = GetApiUrl(new Uri("Users/Public", UriKind.Relative));
 
@@ -464,7 +458,7 @@ namespace Jellyfin.ApiClient
         /// <param name="query">The query.</param>
         /// <returns>Task{ItemsResult}.</returns>
         /// <exception cref="System.ArgumentNullException">query</exception>
-        public async Task<QueryResult<BaseItemDto>> GetItemsAsync(ItemQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetItemsAsync(ItemQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -485,7 +479,7 @@ namespace Jellyfin.ApiClient
         /// <param name="query">The query.</param>
         /// <returns>Task{ItemsResult}.</returns>
         /// <exception cref="System.ArgumentNullException">query</exception>
-        public async Task<QueryResult<BaseItemDto>> GetNextUpEpisodesAsync(NextUpQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetNextUpEpisodesAsync(NextUpQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -542,7 +536,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetEpisodesAsync(EpisodeQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetEpisodesAsync(EpisodeQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -576,7 +570,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetSeasonsAsync(SeasonQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetSeasonsAsync(SeasonQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -610,7 +604,7 @@ namespace Jellyfin.ApiClient
         /// <param name="query">The query.</param>
         /// <returns>Task{ItemsResult}.</returns>
         /// <exception cref="System.ArgumentNullException">userId</exception>
-        public async Task<QueryResult<BaseItemDto>> GetPeopleAsync(PersonsQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetPeopleAsync(PersonsQuery query, CancellationToken cancellationToken = default)
         {
             var url = GetItemByNameListUrl("Persons", query);
 
@@ -706,7 +700,7 @@ namespace Jellyfin.ApiClient
         /// Gets the system status async.
         /// </summary>
         /// <returns>Task{SystemInfo}.</returns>
-        public async Task<SystemInfo> GetSystemInfoAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<SystemInfo> GetSystemInfoAsync(CancellationToken cancellationToken = default)
         {
             var url = GetApiUrl(new Uri("System/Info", UriKind.Relative));
 
@@ -721,7 +715,7 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;PublicSystemInfo&gt;.</returns>
-        public async Task<PublicSystemInfo> GetPublicSystemInfoAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<PublicSystemInfo> GetPublicSystemInfoAsync(CancellationToken cancellationToken = default)
         {
             var url = GetApiUrl(new Uri("System/Info/Public", UriKind.Relative));
 
@@ -1098,10 +1092,13 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("request");
             }
 
-            var dict = new NameValueCollection();
-            dict.Add("ItemIds", request.ItemIds.Select(o => o.ToString()).ToList());
+            var dict = new NameValueCollection
+            {
+                { "ItemIds", request.ItemIds.Select(o => o.ToString()).ToList() },
+                { "PlayCommand", request.PlayCommand.ToString() }
+            };
+
             dict.AddIfNotNull("StartPositionTicks", request.StartPositionTicks);
-            dict.Add("PlayCommand", request.PlayCommand.ToString());
 
             var url = GetApiUrl(new Uri("Sessions/" + sessionId + "/Playing", UriKind.Relative), dict);
 
@@ -1295,12 +1292,13 @@ namespace Jellyfin.ApiClient
         /// <param name="userId">The user id.</param>
         /// <param name="client">The client.</param>
         /// <returns>Task{BaseItemDto}.</returns>
-        public async Task<DisplayPreferences> GetDisplayPreferencesAsync(string id, string userId, string client, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<DisplayPreferences> GetDisplayPreferencesAsync(string id, string userId, string client, CancellationToken cancellationToken = default)
         {
-            var dict = new NameValueCollection();
-
-            dict.Add("userId", userId);
-            dict.Add("client", client);
+            var dict = new NameValueCollection
+            {
+                { "userId", userId },
+                { "client", client }
+            };
 
             var url = GetApiUrl(new Uri("DisplayPreferences/" + id, UriKind.Relative), dict);
 
@@ -1316,17 +1314,18 @@ namespace Jellyfin.ApiClient
         /// <param name="displayPreferences">The display preferences.</param>
         /// <returns>Task{DisplayPreferences}.</returns>
         /// <exception cref="System.ArgumentNullException">userId</exception>
-        public Task UpdateDisplayPreferencesAsync(DisplayPreferences displayPreferences, string userId, string client, CancellationToken cancellationToken = default(CancellationToken))
+        public Task UpdateDisplayPreferencesAsync(DisplayPreferences displayPreferences, string userId, string client, CancellationToken cancellationToken = default)
         {
             if (displayPreferences == null)
             {
                 throw new ArgumentNullException("displayPreferences");
             }
 
-            var dict = new NameValueCollection();
-
-            dict.Add("userId", userId);
-            dict.Add("client", client);
+            var dict = new NameValueCollection
+            {
+                { "userId", userId },
+                { "client", client }
+            };
 
             var url = GetApiUrl(new Uri("DisplayPreferences/" + displayPreferences.Id, UriKind.Relative), dict);
 
@@ -1341,7 +1340,7 @@ namespace Jellyfin.ApiClient
         /// <param name="args">The args.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        public async Task<T> PostAsync<T>(Uri url, NameValueCollection query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<T> PostAsync<T>(Uri url, NameValueCollection query, CancellationToken cancellationToken = default)
             where T : class
         {
             url = AddDataFormat(url);
@@ -1372,7 +1371,7 @@ namespace Jellyfin.ApiClient
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        private async Task<T> DeleteAsync<T>(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task<T> DeleteAsync<T>(Uri url, CancellationToken cancellationToken = default)
             where T : class
         {
             url = AddDataFormat(url);
@@ -1399,7 +1398,7 @@ namespace Jellyfin.ApiClient
         /// <param name="obj">The obj.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``1}.</returns>
-        private async Task<TOutputType> PostAsync<TInputType, TOutputType>(Uri url, TInputType obj, CancellationToken cancellationToken = default(CancellationToken))
+        private async Task<TOutputType> PostAsync<TInputType, TOutputType>(Uri url, TInputType obj, CancellationToken cancellationToken = default)
             where TOutputType : class
         {
             url = AddDataFormat(url);
@@ -1484,11 +1483,13 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<AllThemeMediaResult> GetAllThemeMediaAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<AllThemeMediaResult> GetAllThemeMediaAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default)
         {
-            var queryString = new NameValueCollection();
+            var queryString = new NameValueCollection
+            {
+                { "InheritFromParent", inheritFromParent }
+            };
 
-            queryString.Add("InheritFromParent", inheritFromParent);
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
             var url = GetApiUrl(new Uri("Items/" + itemId + "/ThemeMedia", UriKind.Relative), queryString);
@@ -1538,11 +1539,13 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<ThemeMediaResult> GetThemeSongsAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ThemeMediaResult> GetThemeSongsAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default)
         {
-            var queryString = new NameValueCollection();
+            var queryString = new NameValueCollection
+            {
+                { "InheritFromParent", inheritFromParent }
+            };
 
-            queryString.Add("InheritFromParent", inheritFromParent);
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
             var url = GetApiUrl(new Uri("Items/" + itemId + "/ThemeSongs", UriKind.Relative), queryString);
@@ -1553,11 +1556,13 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<ThemeMediaResult> GetThemeVideosAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ThemeMediaResult> GetThemeVideosAsync(string userId, string itemId, bool inheritFromParent, CancellationToken cancellationToken = default)
         {
-            var queryString = new NameValueCollection();
+            var queryString = new NameValueCollection
+            {
+                { "InheritFromParent", inheritFromParent }
+            };
 
-            queryString.Add("InheritFromParent", inheritFromParent);
             queryString.AddIfNotNullOrEmpty("UserId", userId);
 
             var url = GetApiUrl(new Uri("Items/" + itemId + "/ThemeVideos", UriKind.Relative), queryString);
@@ -1580,7 +1585,7 @@ namespace Jellyfin.ApiClient
         /// or
         /// userId
         /// </exception>
-        public async Task<QueryResult<ItemReview>> GetCriticReviews(string itemId, CancellationToken cancellationToken = default(CancellationToken), int? startIndex = null, int? limit = null)
+        public async Task<QueryResult<ItemReview>> GetCriticReviews(string itemId, CancellationToken cancellationToken = default, int? startIndex = null, int? limit = null)
         {
             if (string.IsNullOrEmpty(itemId))
             {
@@ -1600,7 +1605,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<T> GetAsync<T>(Uri url, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<T> GetAsync<T>(Uri url, CancellationToken cancellationToken = default)
             where T : class
         {
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
@@ -1615,7 +1620,7 @@ namespace Jellyfin.ApiClient
         /// <param name="userId">The user id.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{List{ItemIndex}}.</returns>
-        public async Task<List<ItemIndex>> GetGamePlayerIndex(string userId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<List<ItemIndex>> GetGamePlayerIndex(string userId, CancellationToken cancellationToken = default)
         {
             var queryString = new NameValueCollection();
 
@@ -1636,7 +1641,7 @@ namespace Jellyfin.ApiClient
         /// <param name="includeItemTypes">The include item types.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{List{ItemIndex}}.</returns>
-        public async Task<List<ItemIndex>> GetYearIndex(string userId, string[] includeItemTypes, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<List<ItemIndex>> GetYearIndex(string userId, string[] includeItemTypes, CancellationToken cancellationToken = default)
         {
             var queryString = new NameValueCollection();
 
@@ -1651,7 +1656,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public Task ReportCapabilities(ClientCapabilities capabilities, CancellationToken cancellationToken = default(CancellationToken))
+        public Task ReportCapabilities(ClientCapabilities capabilities, CancellationToken cancellationToken = default)
         {
             if (capabilities == null)
             {
@@ -1663,7 +1668,7 @@ namespace Jellyfin.ApiClient
             return PostAsync<ClientCapabilities, EmptyRequestResult>(url, capabilities, cancellationToken);
         }
 
-        public async Task<LiveTvInfo> GetLiveTvInfoAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<LiveTvInfo> GetLiveTvInfoAsync(CancellationToken cancellationToken = default)
         {
             var url = GetApiUrl(new Uri("LiveTv/Info", UriKind.Relative));
 
@@ -1673,7 +1678,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetLiveTvRecordingGroupsAsync(RecordingGroupQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetLiveTvRecordingGroupsAsync(RecordingGroupQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -1692,7 +1697,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetLiveTvRecordingsAsync(RecordingQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetLiveTvRecordingsAsync(RecordingQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -1722,7 +1727,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<ChannelInfoDto>> GetLiveTvChannelsAsync(LiveTvChannelQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<ChannelInfoDto>> GetLiveTvChannelsAsync(LiveTvChannelQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -1753,7 +1758,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public Task CancelLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
+        public Task CancelLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -1773,7 +1778,7 @@ namespace Jellyfin.ApiClient
             });
         }
 
-        public Task CancelLiveTvTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
+        public Task CancelLiveTvTimerAsync(string id, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -1793,7 +1798,7 @@ namespace Jellyfin.ApiClient
             });
         }
 
-        public async Task<ChannelInfoDto> GetLiveTvChannelAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ChannelInfoDto> GetLiveTvChannelAsync(string id, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -1811,7 +1816,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<BaseItemDto> GetLiveTvRecordingAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<BaseItemDto> GetLiveTvRecordingAsync(string id, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -1829,7 +1834,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<BaseItemDto> GetLiveTvRecordingGroupAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<BaseItemDto> GetLiveTvRecordingGroupAsync(string id, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -1847,7 +1852,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<SeriesTimerInfoDto> GetLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<SeriesTimerInfoDto> GetLiveTvSeriesTimerAsync(string id, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -1864,7 +1869,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<SeriesTimerInfoDto>> GetLiveTvSeriesTimersAsync(SeriesTimerQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<SeriesTimerInfoDto>> GetLiveTvSeriesTimersAsync(SeriesTimerQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -1884,7 +1889,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<TimerInfoDto> GetLiveTvTimerAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<TimerInfoDto> GetLiveTvTimerAsync(string id, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -1901,7 +1906,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<TimerInfoDto>> GetLiveTvTimersAsync(TimerQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<TimerInfoDto>> GetLiveTvTimersAsync(TimerQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -1921,7 +1926,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetLiveTvProgramsAsync(ProgramQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetLiveTvProgramsAsync(ProgramQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -1970,7 +1975,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetRecommendedLiveTvProgramsAsync(RecommendedProgramQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetRecommendedLiveTvProgramsAsync(RecommendedProgramQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -1997,7 +2002,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public Task CreateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken))
+        public Task CreateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default)
         {
             if (timer == null)
             {
@@ -2009,7 +2014,7 @@ namespace Jellyfin.ApiClient
             return PostAsync<SeriesTimerInfoDto, EmptyRequestResult>(url, timer, cancellationToken);
         }
 
-        public Task CreateLiveTvTimerAsync(BaseTimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken))
+        public Task CreateLiveTvTimerAsync(BaseTimerInfoDto timer, CancellationToken cancellationToken = default)
         {
             if (timer == null)
             {
@@ -2021,7 +2026,7 @@ namespace Jellyfin.ApiClient
             return PostAsync<BaseTimerInfoDto, EmptyRequestResult>(url, timer, cancellationToken);
         }
 
-        public async Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(string programId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(string programId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(programId))
             {
@@ -2040,7 +2045,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<SeriesTimerInfoDto> GetDefaultLiveTvTimerInfo(CancellationToken cancellationToken = default)
         {
             var url = GetApiUrl(new Uri("LiveTv/Timers/Defaults", UriKind.Relative));
 
@@ -2050,7 +2055,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<GuideInfo> GetLiveTvGuideInfo(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<GuideInfo> GetLiveTvGuideInfo(CancellationToken cancellationToken = default)
         {
             var url = GetApiUrl(new Uri("LiveTv/GuideInfo", UriKind.Relative));
 
@@ -2060,7 +2065,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<BaseItemDto> GetLiveTvProgramAsync(string id, string userId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<BaseItemDto> GetLiveTvProgramAsync(string id, string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -2078,7 +2083,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public Task UpdateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken))
+        public Task UpdateLiveTvSeriesTimerAsync(SeriesTimerInfoDto timer, CancellationToken cancellationToken = default)
         {
             if (timer == null)
             {
@@ -2090,7 +2095,7 @@ namespace Jellyfin.ApiClient
             return PostAsync<SeriesTimerInfoDto, EmptyRequestResult>(url, timer, cancellationToken);
         }
 
-        public Task UpdateLiveTvTimerAsync(TimerInfoDto timer, CancellationToken cancellationToken = default(CancellationToken))
+        public Task UpdateLiveTvTimerAsync(TimerInfoDto timer, CancellationToken cancellationToken = default)
         {
             if (timer == null)
             {
@@ -2164,7 +2169,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<ChannelFeatures> GetChannelFeatures(string channelId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ChannelFeatures> GetChannelFeatures(string channelId, CancellationToken cancellationToken = default)
         {
             var url = GetApiUrl(new Uri("Channels/" + channelId + "/Features", UriKind.Relative));
 
@@ -2174,7 +2179,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetChannelItems(ChannelItemQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetChannelItems(ChannelItemQuery query, CancellationToken cancellationToken = default)
         {
             var queryString = new NameValueCollection();
 
@@ -2210,7 +2215,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetChannels(ChannelQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetChannels(ChannelQuery query, CancellationToken cancellationToken = default)
         {
             var queryString = new NameValueCollection();
 
@@ -2228,11 +2233,13 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<SessionInfoDto> GetCurrentSessionAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<SessionInfoDto> GetCurrentSessionAsync(CancellationToken cancellationToken = default)
         {
-            var queryString = new NameValueCollection();
+            var queryString = new NameValueCollection
+            {
+                { "DeviceId", DeviceId }
+            };
 
-            queryString.Add("DeviceId", DeviceId);
             var url = GetApiUrl(new Uri("Sessions", UriKind.Relative), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
@@ -2245,9 +2252,11 @@ namespace Jellyfin.ApiClient
 
         public Task StopTranscodingProcesses(string deviceId, string playSessionId)
         {
-            var queryString = new NameValueCollection();
+            var queryString = new NameValueCollection
+            {
+                { "DeviceId", DeviceId }
+            };
 
-            queryString.Add("DeviceId", DeviceId);
             queryString.AddIfNotNullOrEmpty("PlaySessionId", playSessionId);
             Uri url = GetApiUrl(new Uri("Videos/ActiveEncodings", UriKind.Relative), queryString);
 
@@ -2259,7 +2268,7 @@ namespace Jellyfin.ApiClient
             });
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetLatestChannelItems(AllChannelMediaQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetLatestChannelItems(AllChannelMediaQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {
@@ -2271,10 +2280,14 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("userId");
             }
 
-            var queryString = new NameValueCollection();
-            queryString.Add("UserId", query.UserId);
+            var queryString = new NameValueCollection
+            {
+                { "UserId", query.UserId }
+            };
+
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
+
             if (query.Filters != null)
             {
                 queryString.Add("Filters", query.Filters.Select(f => f.ToString()));
@@ -2310,7 +2323,7 @@ namespace Jellyfin.ApiClient
             ClearAuthenticationInfo();
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetUserViews(string userId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetUserViews(string userId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(userId))
             {
@@ -2393,10 +2406,11 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("must provide either MediaType or Ids");
             }
 
-            var queryString = new NameValueCollection();
-
-            queryString.Add("UserId", request.UserId.ToString());
-            queryString.Add("Name", request.Name);
+            var queryString = new NameValueCollection
+            {
+                { "UserId", request.UserId.ToString() },
+                { "Name", request.Name }
+            };
 
             if (!string.IsNullOrEmpty(request.MediaType))
                 queryString.Add("MediaType", request.MediaType);
@@ -2470,7 +2484,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task UploadFile(Stream stream, LocalFileInfo file, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task UploadFile(Stream stream, LocalFileInfo file, CancellationToken cancellationToken = default)
         {
             var dict = new NameValueCollection { };
 
@@ -2618,7 +2632,7 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        public async Task<QueryResult<BaseItemDto>> GetSimilarItemsAsync(SimilarItemsQuery query, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<QueryResult<BaseItemDto>> GetSimilarItemsAsync(SimilarItemsQuery query, CancellationToken cancellationToken = default)
         {
             if (query == null)
             {

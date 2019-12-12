@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +12,7 @@ namespace Jellyfin.ApiClient.Net
     {
         public HttpWebRequest Create(HttpRequest options)
         {
-            var request = HttpWebRequest.CreateHttp(options.Url);
+            var request = WebRequest.CreateHttp(options.Url);
 
             request.AutomaticDecompression = DecompressionMethods.Deflate;
             request.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.Revalidate);

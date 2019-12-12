@@ -1,8 +1,6 @@
 ﻿using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Session;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Jellyfin.ApiClient.Model
 {
