@@ -1,4 +1,7 @@
-﻿using MediaBrowser.Controller.Authentication;
+﻿using Jellyfin.ApiClient.Model.Dto;
+using Jellyfin.ApiClient.Model.Notifications;
+using Jellyfin.ApiClient.Model.Querying;
+using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Model.Channels;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Devices;
@@ -46,13 +49,6 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="handler">The handler.</param>
         /// <returns>System.Uri.</returns>
         Uri GetApiUrl(Uri handler);
-
-        /// <summary>
-        /// Gets the game system summaries async.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task{List{GameSystemSummary}}.</returns>
-        Task<List<GameSystemSummary>> GetGameSystemSummariesAsync(CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets the async.
@@ -304,8 +300,6 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{ItemsResult}.</returns>
         Task<QueryResult<BaseItemDto>> GetSeasonsAsync(SeasonQuery query, CancellationToken cancellationToken = default(CancellationToken));
-
-        Task<PluginSecurityInfo> GetRegistrationInfo();
 
         /// <summary>
         /// Queries for items

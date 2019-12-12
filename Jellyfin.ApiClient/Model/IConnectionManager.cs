@@ -98,7 +98,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="address">The address.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task&lt;ConnectionResult&gt;.</returns>
-        Task<ConnectionResult> Connect(string address, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ConnectionResult> Connect(Uri address, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Logouts this instance.

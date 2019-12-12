@@ -142,7 +142,7 @@ namespace Jellyfin.ApiClient.Playback
 
             if (playbackInfo != null)
             {
-                streamInfo.AllMediaSources = playbackInfo.MediaSources.ToList();
+                //streamInfo.AllMediaSources = playbackInfo.MediaSources.ToList();
                 streamInfo.PlaySessionId = playbackInfo.PlaySessionId;
             }
 
@@ -187,14 +187,14 @@ namespace Jellyfin.ApiClient.Playback
         {
             await StopStranscoding(currentInfo, apiClient).ConfigureAwait(false);
 
-            if (currentInfo.AllMediaSources != null)
-            {
-                options.MediaSources = currentInfo.AllMediaSources.ToArray();
-            }
+            //if (currentInfo.AllMediaSources != null)
+            //{
+            //    options.MediaSources = currentInfo.AllMediaSources.ToArray();
+            //}
 
             var streamInfo = await GetVideoStreamInfoInternal(serverId, options).ConfigureAwait(false);
             streamInfo.PlaySessionId = currentInfo.PlaySessionId;
-            streamInfo.AllMediaSources = currentInfo.AllMediaSources;
+            //streamInfo.AllMediaSources = currentInfo.AllMediaSources;
             return streamInfo;
         }
 
@@ -249,20 +249,20 @@ namespace Jellyfin.ApiClient.Playback
 
             if (playbackInfo != null)
             {
-                streamInfo.AllMediaSources = playbackInfo.MediaSources.ToList();
+                //streamInfo.AllMediaSources = playbackInfo.MediaSources.ToList();
                 streamInfo.PlaySessionId = playbackInfo.PlaySessionId;
             }
 
             return streamInfo;
         }
 
-        private async Task<StreamInfo> GetVideoStreamInfoInternal(string serverId, VideoOptions options)
+        private Task<StreamInfo> GetVideoStreamInfoInternal(string serverId, VideoOptions options)
         {
             var streamBuilder = GetStreamBuilder();
 
             var streamInfo = streamBuilder.BuildVideoItem(options);
             EnsureSuccess(streamInfo);
-            return streamInfo;
+            return Task.FromResult(streamInfo);
         }
 
         private StreamInfo GetForcedDirectPlayStreamInfo(DlnaProfileType mediaType, AudioOptions options, MediaSourceInfo mediaSource)

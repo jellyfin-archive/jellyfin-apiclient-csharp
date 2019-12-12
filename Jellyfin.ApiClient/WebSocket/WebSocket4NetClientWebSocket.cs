@@ -28,25 +28,25 @@ namespace Jellyfin.ApiClient.WebSocket
         /// Gets or sets the state.
         /// </summary>
         /// <value>The state.</value>
-        public MediaBrowser.Model.Net.WebSocketState State
+        public WebSocketState State
         {
             get
             {
 
                 switch (_socket.State)
                 {
-                    case WebSocketState.Closed:
-                        return MediaBrowser.Model.Net.WebSocketState.Closed;
-                    case WebSocketState.Closing:
-                        return MediaBrowser.Model.Net.WebSocketState.Closed;
-                    case WebSocketState.Connecting:
-                        return MediaBrowser.Model.Net.WebSocketState.Connecting;
-                    case WebSocketState.None:
-                        return MediaBrowser.Model.Net.WebSocketState.None;
-                    case WebSocketState.Open:
-                        return MediaBrowser.Model.Net.WebSocketState.Open;
+                    case WebSocket4Net.WebSocketState.Closed:
+                        return WebSocketState.Closed;
+                    case WebSocket4Net.WebSocketState.Closing:
+                        return WebSocketState.Closed;
+                    case WebSocket4Net.WebSocketState.Connecting:
+                        return WebSocketState.Connecting;
+                    case WebSocket4Net.WebSocketState.None:
+                        return WebSocketState.None;
+                    case WebSocket4Net.WebSocketState.Open:
+                        return WebSocketState.Open;
                     default:
-                        return MediaBrowser.Model.Net.WebSocketState.None;
+                        return WebSocketState.None;
                 }
             }
         }
@@ -57,13 +57,13 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public Task ConnectAsync(string url, CancellationToken cancellationToken = default(CancellationToken))
+        public Task ConnectAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken))
         {
             var taskCompletionSource = new TaskCompletionSource<bool>();
 
             try
             {
-                _socket = new WebSocket4Net.WebSocket(url);
+                _socket = new WebSocket4Net.WebSocket(url.ToString());
 
                 _socket.MessageReceived += websocket_MessageReceived;
 
@@ -128,7 +128,7 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="endOfMessage">if set to <c>true</c> [end of message].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public Task SendAsync(byte[] bytes, MediaBrowser.Model.Net.WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default(CancellationToken))
+        public Task SendAsync(byte[] bytes, WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Run(() => _socket.Send(bytes, 0, bytes.Length), cancellationToken);
         }
@@ -142,7 +142,7 @@ namespace Jellyfin.ApiClient.WebSocket
             {
                 var state = State;
 
-                if (state == MediaBrowser.Model.Net.WebSocketState.Open || state == MediaBrowser.Model.Net.WebSocketState.Connecting)
+                if (state == WebSocketState.Open || state == WebSocketState.Connecting)
                 {
                     _logger.LogInformation("Sending web socket close message");
 

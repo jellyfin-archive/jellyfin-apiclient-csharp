@@ -61,11 +61,11 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public async Task ConnectAsync(string url, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task ConnectAsync(Uri url, CancellationToken cancellationToken = default(CancellationToken))
         {
             try
             {
-                await _client.ConnectAsync(new Uri(url), cancellationToken).ConfigureAwait(false);
+                await _client.ConnectAsync(url, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -145,13 +145,13 @@ namespace Jellyfin.ApiClient.WebSocket
         /// <param name="endOfMessage">if set to <c>true</c> [end of message].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        public async Task SendAsync(byte[] bytes, MediaBrowser.Model.Net.WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task SendAsync(byte[] bytes, WebSocketMessageType type, bool endOfMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             await _sendResource.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                WebSocketMessageType nativeType;
+                System.Net.WebSockets.WebSocketMessageType nativeType;
 
                 if (!Enum.TryParse(type.ToString(), true, out nativeType))
                 {
@@ -172,16 +172,16 @@ namespace Jellyfin.ApiClient.WebSocket
         /// Gets or sets the state.
         /// </summary>
         /// <value>The state.</value>
-        public MediaBrowser.Model.Net.WebSocketState State
+        public WebSocketState State
         {
             get
             {
                 if (_client == null)
                 {
-                    return MediaBrowser.Model.Net.WebSocketState.None;
+                    return WebSocketState.None;
                 }
 
-                MediaBrowser.Model.Net.WebSocketState commonState;
+                WebSocketState commonState;
 
                 if (!Enum.TryParse(_client.State.ToString(), true, out commonState))
                 {
@@ -223,7 +223,7 @@ namespace Jellyfin.ApiClient.WebSocket
                 
                 if (_client != null)
                 {
-                    if (_client.State == WebSocketState.Open)
+                    if (_client.State == System.Net.WebSockets.WebSocketState.Open)
                     {
                         _logger.LogInformation("Sending web socket close message.");
 

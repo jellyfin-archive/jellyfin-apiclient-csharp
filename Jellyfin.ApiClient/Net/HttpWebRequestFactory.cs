@@ -11,7 +11,6 @@ namespace Jellyfin.ApiClient.Net
 {
     public class HttpWebRequestFactory : IHttpWebRequestFactory
     {
-        private static PropertyInfo _httpBehaviorPropertyInfo;
         public HttpWebRequest Create(HttpRequest options)
         {
             var request = HttpWebRequest.CreateHttp(options.Url);
@@ -22,14 +21,6 @@ namespace Jellyfin.ApiClient.Net
             request.Method = options.Method;
             request.Pipelined = true;
             request.Timeout = options.Timeout;
-
-            // This is a hack to prevent KeepAlive from getting disabled internally by the HttpWebRequest
-            /*var sp = request.ServicePoint;
-            if (_httpBehaviorPropertyInfo == null)
-            {
-                _httpBehaviorPropertyInfo = sp.GetType().GetProperty("HttpBehaviour", BindingFlags.Instance | BindingFlags.NonPublic);
-            }
-            _httpBehaviorPropertyInfo?.SetValue(sp, (byte)0, null);*/
 
             if (!string.IsNullOrEmpty(options.RequestContent) ||
                 string.Equals(options.Method, "post", StringComparison.OrdinalIgnoreCase))

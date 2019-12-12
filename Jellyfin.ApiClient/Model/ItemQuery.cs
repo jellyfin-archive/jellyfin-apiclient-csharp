@@ -282,11 +282,8 @@ namespace Jellyfin.ApiClient.Model
         public int? ImageTypeLimit { get; set; }
         public ImageType[] EnableImageTypes { get; set; }
 
-        [Obsolete]
         public string[] Artists { get; set; }
-        [Obsolete]
         public string[] Studios { get; set; }
-        [Obsolete]
         public string Person { get; set; }
 
         public bool EnableTotalRecordCount { get; set; }

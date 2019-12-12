@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.Net;
+﻿using Jellyfin.ApiClient.WebSocket;
+using MediaBrowser.Model.Net;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="url">The URL.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task.</returns>
-        Task ConnectAsync(string url, CancellationToken cancellationToken);
+        Task ConnectAsync(Uri url, CancellationToken cancellationToken);
 
         /// <summary>
         /// Gets or sets the receive action.

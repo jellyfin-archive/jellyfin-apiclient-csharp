@@ -174,29 +174,25 @@ namespace Jellyfin.ApiClient
             return servers.Select(i => new ServerInfo
             {
                 Id = i.Id,
-                Address = ConvertEndpointAddressToManualAddress(i) ?? i.Address,
+                Address = ConvertEndpointAddressToManualAddress(i) ?? new Uri(i.Address),
                 Name = i.Name
             })
             .ToList();
         }
 
-        private string ConvertEndpointAddressToManualAddress(ServerDiscoveryInfo info)
+        private Uri ConvertEndpointAddressToManualAddress(ServerDiscoveryInfo info)
         {
             if (!string.IsNullOrWhiteSpace(info.Address) && !string.IsNullOrWhiteSpace(info.EndpointAddress))
             {
-                var address = info.EndpointAddress.Split(':').First();
-
                 // Determine the port, if any
-                var parts = info.Address.Split(':');
-                if (parts.Length > 1)
+                var parts = new Uri(info.Address).Port;
+
+                var uriBuilder = new UriBuilder(info.EndpointAddress.Split(':').First())
                 {
-                    var portString = parts.Last();
-                    int port;
-                    if (int.TryParse(portString, NumberStyles.Any, CultureInfo.InvariantCulture, out port))
-                    {
-                        address += ":" + portString;
-                    }
-                }
+                    Port = new Uri(info.Address).Port
+                };
+
+                var address = uriBuilder.Uri;
 
                 return NormalizeAddress(address);
             }
@@ -266,9 +262,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<ConnectionResult> Connect(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken = default(CancellationToken))
         {
-
-            string address = server.Address;
-            if (string.IsNullOrEmpty(address))
+            if (string.IsNullOrEmpty(server.Address.ToString()))
             {
                 // TODO: on failed connection
                 return new ConnectionResult { State = ConnectionState.Unavailable };
@@ -276,7 +270,7 @@ namespace Jellyfin.ApiClient
 
             int timeout = 100;
 
-            await TryConnect(address, timeout, cancellationToken);
+            await TryConnect(server.Address, timeout, cancellationToken);
 
             // TODO: this isn't right
             return new ConnectionResult { State = ConnectionState.Unavailable };
@@ -345,7 +339,7 @@ namespace Jellyfin.ApiClient
                 CancellationToken = cancellationToken,
                 Method = "GET",
                 RequestHeaders = headers,
-                Url = url + "/emby/system/info?format=json"
+                Url = new Uri(url, "/emby/system/info?format=json")
             };
 
             try
@@ -359,7 +353,7 @@ namespace Jellyfin.ApiClient
 
                 if (server.UserId != Guid.Empty)
                 {
-                    request.Url = url + "/mediabrowser/users/" + server.UserId + "?format=json";
+                    request.Url = new Uri(url, "/mediabrowser/users/" + server.UserId + "?format=json");
 
                     using (var stream = await _httpClient.SendAsync(request).ConfigureAwait(false))
                     {
@@ -382,9 +376,9 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        private async Task<PublicSystemInfo> TryConnect(string url, int timeout, CancellationToken cancellationToken)
+        private async Task<PublicSystemInfo> TryConnect(Uri url, int timeout, CancellationToken cancellationToken)
         {
-            url += "/emby/system/info/public?format=json";
+            url = new Uri(url, "/emby/system/info/public?format=json");
 
             try
             {
@@ -412,47 +406,6 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        /// <summary>
-        /// Wakes all servers.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Task.</returns>
-        private async Task WakeAllServers(CancellationToken cancellationToken)
-        {
-            var credentials = await _credentialProvider.GetServerCredentials().ConfigureAwait(false);
-
-            foreach (var server in credentials.Servers.ToList())
-            {
-                await WakeServer(server, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        /// <summary>
-        /// Wakes a server
-        /// </summary>
-        private async Task WakeServer(ServerInfo server, CancellationToken cancellationToken)
-        {
-            foreach (var info in server.WakeOnLanInfos)
-            {
-                await WakeServer(info, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        /// <summary>
-        /// Wakes a device based on mac address
-        /// </summary>
-        private async Task WakeServer(WakeOnLanInfo info, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await _networkConnectivity.SendWakeOnLan(info.MacAddress, info.Port, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Error sending wake on lan command", ex);
-            }
-        }
-
         public void Dispose()
         {
             foreach (var client in ApiClients.Values.ToList())
@@ -471,7 +424,7 @@ namespace Jellyfin.ApiClient
             return ApiClients.Values.OfType<ApiClient>().FirstOrDefault(i => string.Equals(i.ServerInfo.Id, serverId, StringComparison.OrdinalIgnoreCase));
         }
 
-        public async Task<ConnectionResult> Connect(string address, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ConnectionResult> Connect(Uri address, CancellationToken cancellationToken = default(CancellationToken))
         {
             address = NormalizeAddress(address);
 
@@ -495,16 +448,16 @@ namespace Jellyfin.ApiClient
             return await Connect(server, cancellationToken).ConfigureAwait(false);
         }
 
-        private string NormalizeAddress(string address)
+        private Uri NormalizeAddress(Uri address)
         {
-            if (string.IsNullOrEmpty(address))
+            if (string.IsNullOrEmpty(address.ToString()))
             {
                 throw new ArgumentNullException("address");
             }
 
-            if (!address.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            if (!address.ToString().StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
-                address = "http://" + address;
+                address = new Uri("http://" + address.ToString());
             }
 
             return address;

@@ -1,4 +1,7 @@
 ﻿using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Model.Dto;
+using Jellyfin.ApiClient.Model.Notifications;
+using Jellyfin.ApiClient.Model.Querying;
 using Jellyfin.ApiClient.Net;
 using MediaBrowser.Controller.Authentication;
 using MediaBrowser.Model.ApiClient;
@@ -43,7 +46,6 @@ namespace Jellyfin.ApiClient
     public partial class ApiClient : BaseApiClient, IApiClient
     {
         public event EventHandler<GenericEventArgs<RemoteLogoutReason>> RemoteLoggedOut;
-        public event EventHandler<GenericEventArgs<AuthenticationResult>> Authenticated;
         public event EventHandler<GenericEventArgs<AuthenticationResult>> OnAuthenticated;
 
         /// <summary>
@@ -454,11 +456,6 @@ namespace Jellyfin.ApiClient
             {
                 return DeserializeFromStream<SessionInfoDto[]>(stream);
             }
-        }
-
-        public Task<PluginSecurityInfo> GetRegistrationInfo()
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -912,20 +909,6 @@ namespace Jellyfin.ApiClient
             }
         }
 
-        /// <summary>
-        /// Gets the game system summaries async.
-        /// </summary>
-        /// <returns>Task{List{GameSystemSummary}}.</returns>
-        public async Task<List<GameSystemSummary>> GetGameSystemSummariesAsync(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var url = GetApiUrl(new Uri("Games/SystemSummaries"));
-
-            using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
-            {
-                return DeserializeFromStream<List<GameSystemSummary>>(stream);
-            }
-        }
-
         public Task<UserItemDataDto> MarkPlayedAsync(string itemId, string userId, DateTime? datePlayed)
         {
             if (string.IsNullOrEmpty(itemId))
@@ -1248,12 +1231,13 @@ namespace Jellyfin.ApiClient
 
             var url = GetApiUrl(new Uri("Users/AuthenticateByName"));
 
-            var args = new NameValueCollection();
+            var authRequest = new AuthenticationRequest
+            {
+                Username = username,
+                Pw = password
+            };
 
-            args["Username"] = Uri.EscapeDataString(username);
-            args["Pw"] = password;
-
-            var result = await PostAsync<AuthenticationResult>(url, args, CancellationToken.None);
+            var result = await PostAsync<AuthenticationRequest,AuthenticationResult>(url, authRequest, CancellationToken.None);
 
             SetAuthenticationInfo(result.AccessToken, result.User.Id);
 
@@ -1357,15 +1341,13 @@ namespace Jellyfin.ApiClient
         /// <param name="args">The args.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{``0}.</returns>
-        [Obsolete("Deprecated. Use PostAsync<TInputType, TOutputType> instead.")]
         public async Task<T> PostAsync<T>(Uri url, NameValueCollection query, CancellationToken cancellationToken = default(CancellationToken))
             where T : class
         {
             url = AddDataFormat(url);
 
             // Create the post body
-            var strings = query.Keys.Select(key => string.Format("{0}={1}", key, query[key]));
-            var postContent = string.Join("&", strings.ToArray());
+            var postContent = query.ToString();
 
             const string contentType = "application/x-www-form-urlencoded";
 
@@ -1487,7 +1469,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<NotificationResult> GetNotificationsAsync(NotificationQuery query)
         {
-            var url = "Notifications/" + query.UserId;
+            var url = new Uri("Notifications/" + query.UserId);
 
             var dict = new NameValueCollection();
             dict.AddIfNotNull("ItemIds", query.IsRead);
@@ -1721,7 +1703,6 @@ namespace Jellyfin.ApiClient
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
             dict.AddIfNotNullOrEmpty("ChannelId", query.ChannelId);
-            dict.AddIfNotNullOrEmpty("GroupId", query.GroupId);
             dict.AddIfNotNullOrEmpty("Id", query.Id);
             dict.AddIfNotNullOrEmpty("SeriesTimerId", query.SeriesTimerId);
             dict.AddIfNotNull("IsInProgress", query.IsInProgress);
@@ -2221,7 +2202,7 @@ namespace Jellyfin.ApiClient
             queryString.AddIfNotNull("SortBy", sortBy);
             queryString.AddIfNotNull("SortOrder", sortOrder);
 
-            var url = GetApiUrl("Channels/" + query.ChannelId + "/Items", queryString);
+            var url = GetApiUrl(new Uri("Channels/" + query.ChannelId + "/Items"), queryString);
 
             using (var stream = await GetSerializedStreamAsync(url, cancellationToken).ConfigureAwait(false))
             {

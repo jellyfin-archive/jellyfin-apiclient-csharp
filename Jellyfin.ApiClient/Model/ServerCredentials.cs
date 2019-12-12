@@ -49,21 +49,13 @@ namespace Jellyfin.ApiClient.Model
                     existing.AccessToken = server.AccessToken;
                     existing.UserId = server.UserId;
                 }
-                if (!string.IsNullOrEmpty(server.Address))
+                if (!string.IsNullOrEmpty(server.Address.ToString()))
                 {
                     existing.Address = server.Address;
                 }
                 if (!string.IsNullOrEmpty(server.Name))
                 {
                     existing.Name = server.Name;
-                }
-                if (server.WakeOnLanInfos != null && server.WakeOnLanInfos.Count > 0)
-                {
-                    existing.WakeOnLanInfos = new List<WakeOnLanInfo>();
-                    foreach (WakeOnLanInfo info in server.WakeOnLanInfos)
-                    {
-                        existing.WakeOnLanInfos.Add(info);
-                    }
                 }
             }
             else

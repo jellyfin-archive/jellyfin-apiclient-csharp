@@ -1,4 +1,6 @@
 ﻿using Jellyfin.ApiClient.Model;
+using Jellyfin.ApiClient.Net;
+using Jellyfin.ApiClient.WebSocket;
 using MediaBrowser.Model.ApiClient;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
@@ -313,14 +315,14 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="serverAddress">The server address.</param>
         /// <returns>System.String.</returns>
-        protected string GetWebSocketUrl(string serverAddress)
+        protected Uri GetWebSocketUrl(Uri serverAddress)
         {
             if (string.IsNullOrWhiteSpace(AccessToken))
             {
                 throw new ArgumentException("Cannot open web socket without an access token.");
             }
 
-            return serverAddress.Replace("http:", "ws:").Replace("https:", "wss:") + "/embywebsocket?api_key=" + AccessToken + "&deviceId=" + DeviceId;
+            return new Uri(serverAddress.ToString().Replace("http:", "ws:").Replace("https:", "wss:") + "/embywebsocket?api_key=" + AccessToken + "&deviceId=" + DeviceId);
         }
 
         /// <summary>

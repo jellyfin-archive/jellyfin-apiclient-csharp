@@ -12,12 +12,10 @@ namespace Jellyfin.ApiClient.Model
         public Uri Address { get; set; }
         public Guid UserId { get; set; }
         public String AccessToken { get; set; }
-        public List<WakeOnLanInfo> WakeOnLanInfos { get; set; }
         public DateTime DateLastAccessed { get; set; }
 
         public ServerInfo()
         {
-            WakeOnLanInfos = new List<WakeOnLanInfo>();
         }
 
         public void ImportInfo(PublicSystemInfo systemInfo)
@@ -33,21 +31,6 @@ namespace Jellyfin.ApiClient.Model
             if (!string.IsNullOrEmpty(systemInfo.LocalAddress))
             {
                 Address = new Uri(systemInfo.LocalAddress);
-            }
-
-            var fullSystemInfo = systemInfo as SystemInfo;
-
-            if (fullSystemInfo != null)
-            {
-                WakeOnLanInfos = new List<WakeOnLanInfo>();
-
-                if (!string.IsNullOrEmpty(fullSystemInfo.MacAddress))
-                {
-                    WakeOnLanInfos.Add(new WakeOnLanInfo
-                    {
-                        MacAddress = fullSystemInfo.MacAddress
-                    });
-                }
             }
         }
     }
