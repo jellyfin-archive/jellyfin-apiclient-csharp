@@ -9,6 +9,7 @@ using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Web;
@@ -439,7 +440,7 @@ namespace Jellyfin.ApiClient
 
             dict.AddIfNotNullOrEmpty("SeriesId", query.SeriesId);
 
-            dict.Add("UserId", query.UserId.ToString());
+            dict.Add("UserId", query.UserId.ToString("N", CultureInfo.InvariantCulture));
 
             dict.AddIfNotNull("EnableImages", query.EnableImages);
             if (query.EnableImageTypes != null)
@@ -832,7 +833,7 @@ namespace Jellyfin.ApiClient
             }
             else
             {
-                backdropItemId = item.Id.ToString();
+                backdropItemId = item.Id.ToString("N", CultureInfo.InvariantCulture);
                 backdropImageTags = item.BackdropImageTags;
             }
 
@@ -875,7 +876,7 @@ namespace Jellyfin.ApiClient
 
             options.ImageType = ImageType.Logo;
 
-            var logoItemId = HasLogo(item) ? item.Id.ToString() : item.ParentLogoItemId;
+            var logoItemId = HasLogo(item) ? item.Id.ToString("N", CultureInfo.InvariantCulture) : item.ParentLogoItemId;
             var imageTag = HasLogo(item) ? item.ImageTags[ImageType.Logo] : item.ParentLogoImageTag;
 
             if (!string.IsNullOrEmpty(logoItemId))
@@ -902,7 +903,7 @@ namespace Jellyfin.ApiClient
 
             options.ImageType = ImageType.Thumb;
 
-            var itemId = HasThumb(item) ? item.Id.ToString() : item.SeriesThumbImageTag != null ? item.SeriesId.ToString() : item.ParentThumbItemId;
+            var itemId = HasThumb(item) ? item.Id.ToString("N", CultureInfo.InvariantCulture) : item.SeriesThumbImageTag != null ? item.SeriesId.ToString("N", CultureInfo.InvariantCulture) : item.ParentThumbItemId;
             var imageTag = HasThumb(item) ? item.ImageTags[ImageType.Thumb] : item.SeriesThumbImageTag ?? item.ParentThumbImageTag;
 
             if (!string.IsNullOrEmpty(itemId))
@@ -936,7 +937,7 @@ namespace Jellyfin.ApiClient
 
             options.ImageType = ImageType.Art;
 
-            var artItemId = HasArtImage(item) ? item.Id.ToString() : item.ParentArtItemId;
+            var artItemId = HasArtImage(item) ? item.Id.ToString("N", CultureInfo.InvariantCulture) : item.ParentArtItemId;
             var imageTag = HasArtImage(item) ? item.ImageTags[ImageType.Art] : item.ParentArtImageTag;
 
             if (!string.IsNullOrEmpty(artItemId))

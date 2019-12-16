@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Linq;
 
 namespace Jellyfin.ApiClient
@@ -17,7 +18,7 @@ namespace Jellyfin.ApiClient
         /// <param name="value">The value.</param>
         public static void Add(this NameValueCollection col, string name, int value)
         {
-            col.Add(name, value.ToString());
+            col.Add(name, value.ToString(CultureInfo.InvariantCulture));
         }
 
         /// <summary>
@@ -27,7 +28,7 @@ namespace Jellyfin.ApiClient
         /// <param name="value">The value.</param>
         public static void Add(this NameValueCollection col, string name, long value)
         {
-            col.Add(name, value.ToString());
+            col.Add(name, value.ToString(CultureInfo.InvariantCulture));
         }
 
         /// <summary>
@@ -37,7 +38,7 @@ namespace Jellyfin.ApiClient
         /// <param name="value">The value.</param>
         public static void Add(this NameValueCollection col, string name, double value)
         {
-            col.Add(name, value.ToString());
+            col.Add(name, value.ToString(CultureInfo.InvariantCulture));
         }
 
         /// <summary>
@@ -99,7 +100,7 @@ namespace Jellyfin.ApiClient
         /// <param name="value">if set to <c>true</c> [value].</param>
         public static void Add(this NameValueCollection col, string name, bool value)
         {
-            col.Add(name, value.ToString());
+            col.Add(name, value.ToString(CultureInfo.InvariantCulture));
         }
 
         /// <summary>
@@ -128,7 +129,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("value");
             }
 
-            col.Add(name, string.Join(",", value.Select(v => v.ToString()).ToArray()));
+            col.Add(name, string.Join(",", value.Select(v => v.ToString(CultureInfo.InvariantCulture)).ToArray()));
         }
 
         /// <summary>

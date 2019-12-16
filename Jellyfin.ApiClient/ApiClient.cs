@@ -25,6 +25,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -918,7 +919,7 @@ namespace Jellyfin.ApiClient
 
             if (datePlayed.HasValue)
             {
-                dict.Add("DatePlayed", datePlayed.Value.ToString("yyyyMMddHHmmss"));
+                dict.Add("DatePlayed", datePlayed.Value.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture));
             }
 
             var url = GetApiUrl(new Uri("Users/" + userId + "/PlayedItems/" + itemId, UriKind.Relative), dict);
@@ -1094,7 +1095,7 @@ namespace Jellyfin.ApiClient
 
             var dict = new NameValueCollection
             {
-                { "ItemIds", request.ItemIds.Select(o => o.ToString()).ToList() },
+                { "ItemIds", request.ItemIds.Select(o => o.ToString("N", CultureInfo.InvariantCulture)).ToList() },
                 { "PlayCommand", request.PlayCommand.ToString() }
             };
 
@@ -1117,7 +1118,7 @@ namespace Jellyfin.ApiClient
 
             if (command.TimeoutMs.HasValue)
             {
-                cmd.Arguments["Timeout"] = command.TimeoutMs?.ToString();
+                cmd.Arguments["Timeout"] = command.TimeoutMs?.ToString(CultureInfo.InvariantCulture);
             }
 
             return SendCommandAsync(sessionId, cmd);
@@ -1510,7 +1511,7 @@ namespace Jellyfin.ApiClient
             var queryString = new NameValueCollection();
 
             queryString.AddIfNotNullOrEmpty("SearchTerm", query.SearchTerm);
-            queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
+            queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString("N", CultureInfo.InvariantCulture));
             queryString.AddIfNotNullOrEmpty("ParentId", query.ParentId);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
@@ -1706,7 +1707,7 @@ namespace Jellyfin.ApiClient
 
             var dict = new NameValueCollection { };
 
-            dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
+            dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString("N", CultureInfo.InvariantCulture));
             dict.AddIfNotNullOrEmpty("ChannelId", query.ChannelId);
             dict.AddIfNotNullOrEmpty("Id", query.Id);
             dict.AddIfNotNullOrEmpty("SeriesTimerId", query.SeriesTimerId);
@@ -1736,7 +1737,7 @@ namespace Jellyfin.ApiClient
 
             var dict = new NameValueCollection { };
 
-            dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
+            dict.AddIfNotNullOrEmpty("UserId", query.UserId.ToString("N", CultureInfo.InvariantCulture));
             dict.AddIfNotNull("StartIndex", query.StartIndex);
             dict.AddIfNotNull("Limit", query.Limit);
             dict.AddIfNotNull("IsFavorite", query.IsFavorite);
@@ -1939,19 +1940,19 @@ namespace Jellyfin.ApiClient
 
             if (query.MaxEndDate.HasValue)
             {
-                dict.Add("MaxEndDate", query.MaxEndDate.Value.ToUniversalTime().ToString(isoDateFormat));
+                dict.Add("MaxEndDate", query.MaxEndDate.Value.ToUniversalTime().ToString(isoDateFormat, CultureInfo.InvariantCulture));
             }
             if (query.MaxStartDate.HasValue)
             {
-                dict.Add("MaxStartDate", query.MaxStartDate.Value.ToUniversalTime().ToString(isoDateFormat));
+                dict.Add("MaxStartDate", query.MaxStartDate.Value.ToUniversalTime().ToString(isoDateFormat, CultureInfo.InvariantCulture));
             }
             if (query.MinEndDate.HasValue)
             {
-                dict.Add("MinEndDate", query.MinEndDate.Value.ToUniversalTime().ToString(isoDateFormat));
+                dict.Add("MinEndDate", query.MinEndDate.Value.ToUniversalTime().ToString(isoDateFormat, CultureInfo.InvariantCulture));
             }
             if (query.MinStartDate.HasValue)
             {
-                dict.Add("MinStartDate", query.MinStartDate.Value.ToUniversalTime().ToString(isoDateFormat));
+                dict.Add("MinStartDate", query.MinStartDate.Value.ToUniversalTime().ToString(isoDateFormat, CultureInfo.InvariantCulture));
             }
 
             dict.AddIfNotNullOrEmpty("UserId", query.UserId);
@@ -2126,7 +2127,7 @@ namespace Jellyfin.ApiClient
                 Name = "SetAudioStreamIndex"
             };
 
-            cmd.Arguments["Index"] = index.ToString();
+            cmd.Arguments["Index"] = index.ToString(CultureInfo.InvariantCulture);
 
             return SendCommandAsync(sessionId, cmd);
         }
@@ -2138,7 +2139,7 @@ namespace Jellyfin.ApiClient
                 Name = "SetSubtitleStreamIndex"
             };
 
-            cmd.Arguments["Index"] = (index ?? -1).ToString();
+            cmd.Arguments["Index"] = (index ?? -1).ToString(CultureInfo.InvariantCulture);
 
             return SendCommandAsync(sessionId, cmd);
         }
@@ -2150,7 +2151,7 @@ namespace Jellyfin.ApiClient
                 Name = "SetVolume"
             };
 
-            cmd.Arguments["Volume"] = volume.ToString();
+            cmd.Arguments["Volume"] = volume.ToString(CultureInfo.InvariantCulture);
 
             return SendCommandAsync(sessionId, cmd);
         }
@@ -2219,7 +2220,7 @@ namespace Jellyfin.ApiClient
         {
             var queryString = new NameValueCollection();
 
-            queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString());
+            queryString.AddIfNotNullOrEmpty("UserId", query.UserId.ToString("N", CultureInfo.InvariantCulture));
             queryString.AddIfNotNull("SupportsLatestItems", query.SupportsLatestItems);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
@@ -2349,7 +2350,7 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("query");
             }
 
-            if (string.IsNullOrEmpty(query.UserId.ToString()))
+            if (string.IsNullOrEmpty(query.UserId.ToString("N", CultureInfo.InvariantCulture)))
             {
                 throw new ArgumentNullException("userId");
             }
@@ -2357,7 +2358,7 @@ namespace Jellyfin.ApiClient
             var queryString = new NameValueCollection();
             queryString.AddIfNotNull("GroupItems", query.GroupItems);
             queryString.AddIfNotNull("IncludeItemTypes", query.IncludeItemTypes);
-            queryString.AddIfNotNullOrEmpty("ParentId", query.ParentId.ToString());
+            queryString.AddIfNotNullOrEmpty("ParentId", query.ParentId.ToString("N", CultureInfo.InvariantCulture));
             queryString.AddIfNotNull("IsPlayed", query.IsPlayed);
             queryString.AddIfNotNull("StartIndex", query.StartIndex);
             queryString.AddIfNotNull("Limit", query.Limit);
@@ -2396,7 +2397,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<PlaylistCreationResult> CreatePlaylist(PlaylistCreationRequest request)
         {
-            if (string.IsNullOrEmpty(request.UserId.ToString()))
+            if (string.IsNullOrEmpty(request.UserId.ToString("N", CultureInfo.InvariantCulture)))
             {
                 throw new ArgumentNullException("userId");
             }
@@ -2408,7 +2409,7 @@ namespace Jellyfin.ApiClient
 
             var queryString = new NameValueCollection
             {
-                { "UserId", request.UserId.ToString() },
+                { "UserId", request.UserId.ToString("N", CultureInfo.InvariantCulture) },
                 { "Name", request.Name }
             };
 
@@ -2416,7 +2417,7 @@ namespace Jellyfin.ApiClient
                 queryString.Add("MediaType", request.MediaType);
 
             if (request.ItemIdList != null && request.ItemIdList.Any())
-                queryString.Add("Ids", request.ItemIdList.Select(o => 0.ToString()).ToList());
+                queryString.Add("Ids", request.ItemIdList.Select(o => o.ToString("N", CultureInfo.InvariantCulture)).ToList());
 
             var url = GetApiUrl(new Uri("Playlists/", UriKind.Relative), queryString);
 
@@ -2526,7 +2527,7 @@ namespace Jellyfin.ApiClient
         {
             var dict = new NameValueCollection { };
 
-            dict.AddIfNotNullOrEmpty("UserId", request.UserId.ToString());
+            dict.AddIfNotNullOrEmpty("UserId", request.UserId.ToString("N", CultureInfo.InvariantCulture));
 
             var url = GetApiUrl(new Uri("Items/" + request.Id + "/PlaybackInfo", UriKind.Relative), dict);
 

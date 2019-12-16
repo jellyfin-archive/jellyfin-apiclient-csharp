@@ -1,5 +1,6 @@
 ﻿using Jellyfin.ApiClient.Net;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -19,7 +20,7 @@ namespace Jellyfin.ApiClient
 
         public void SetContentLength(HttpWebRequest request, long length)
         {
-            request.Headers["Content-Length"] = length.ToString();
+            request.Headers["Content-Length"] = length.ToString(CultureInfo.InvariantCulture);
         }
 
         public Task<WebResponse> GetResponseAsync(HttpWebRequest request, int timeoutMs)
