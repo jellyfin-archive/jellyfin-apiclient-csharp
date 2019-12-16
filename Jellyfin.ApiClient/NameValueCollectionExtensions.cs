@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
+using System.Web;
 
 namespace Jellyfin.ApiClient
 {
@@ -203,6 +204,16 @@ namespace Jellyfin.ApiClient
             {
                 col.Add(name, value, delimiter);
             }
+        }
+
+        public static string ToQueryString(this NameValueCollection col)
+        {
+            var queryArray = (
+                from key in col.AllKeys
+                from value in col.GetValues(key)
+                select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value))
+            ).ToArray();
+            return string.Join("&", queryArray);
         }
     }
 }

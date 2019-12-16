@@ -205,11 +205,7 @@ namespace Jellyfin.ApiClient
 
             if (!string.IsNullOrEmpty(ServerInfo.Address.ToString()))
             {
-                if (!ServerInfo.Address.ToString().Equals(ServerInfo.Address.ToString(), StringComparison.OrdinalIgnoreCase) &&
-                    !ServerInfo.Address.ToString().Equals(ServerInfo.Address.ToString(), StringComparison.OrdinalIgnoreCase))
-                {
-                    urlList.Insert(0, ServerInfo.Address);
-                }
+                urlList.Insert(0, ServerInfo.Address);
             }
 
             foreach (var url in urlList)
@@ -614,7 +610,7 @@ namespace Jellyfin.ApiClient
                 var uriBuilder = new UriBuilder(url);
                 var uriQuery = HttpUtility.ParseQueryString(uriBuilder.Query);
                 uriQuery["PersonTypes"] = string.Join(",", query.PersonTypes);
-                uriBuilder.Query = uriQuery.ToString();
+                uriBuilder.Query = uriQuery.ToQueryString();
                 url = uriBuilder.Uri;
             }
 
@@ -1347,7 +1343,7 @@ namespace Jellyfin.ApiClient
             url = AddDataFormat(url);
 
             // Create the post body
-            var postContent = query.ToString();
+            var postContent = query.ToQueryString();
 
             const string contentType = "application/x-www-form-urlencoded";
 

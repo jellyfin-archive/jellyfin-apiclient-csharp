@@ -184,9 +184,7 @@ namespace Jellyfin.ApiClient
                     Port = new Uri(info.Address).Port
                 };
 
-                var address = uriBuilder.Uri;
-
-                return NormalizeAddress(address);
+                return uriBuilder.Uri;
             }
 
             return null;
@@ -418,8 +416,6 @@ namespace Jellyfin.ApiClient
 
         public async Task<ConnectionResult> Connect(Uri address, CancellationToken cancellationToken = default)
         {
-            address = NormalizeAddress(address);
-
             var publicInfo = await TryConnect(address, 15000, cancellationToken).ConfigureAwait(false);
 
             if (publicInfo == null)
@@ -438,21 +434,6 @@ namespace Jellyfin.ApiClient
             server.ImportInfo(publicInfo);
 
             return await Connect(server, cancellationToken).ConfigureAwait(false);
-        }
-
-        private Uri NormalizeAddress(Uri address)
-        {
-            if (string.IsNullOrEmpty(address.ToString()))
-            {
-                throw new ArgumentNullException("address");
-            }
-
-            if (!address.ToString().StartsWith("http", StringComparison.OrdinalIgnoreCase))
-            {
-                address = new Uri("http://" + address.ToString());
-            }
-
-            return address;
         }
 
         private async Task OnAuthenticated(IApiClient apiClient,

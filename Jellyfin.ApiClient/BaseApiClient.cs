@@ -254,14 +254,9 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentNullException("handler");
             }
 
-            if (queryString == null)
-            {
-                throw new ArgumentNullException("queryString");
-            }
-
             var uriBuilder = new UriBuilder(new Uri(ApiUrl, handler))
             {
-                Query = queryString.ToString()
+                Query = queryString.ToQueryString(),
             };
 
             return uriBuilder.Uri;
@@ -1009,7 +1004,7 @@ namespace Jellyfin.ApiClient
             UriBuilder uriBuilder = new UriBuilder(url);
             NameValueCollection query = HttpUtility.ParseQueryString(uriBuilder.Query);
             query["format"] = format;
-            uriBuilder.Query = query.ToString();
+            uriBuilder.Query = query.ToQueryString();
             return uriBuilder.Uri;
         }
 
