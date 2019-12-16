@@ -113,7 +113,7 @@ namespace Jellyfin.ApiClient
 
                     socket.OnReceiveBytes = OnMessageReceived;
                     socket.OnReceive = OnMessageReceived;
-                    socket.Closed += CurrentWebSocket_Closed;
+                    socket.Closed += OnCurrentWebSocketClosed;
 
                     //try
                     //{
@@ -156,7 +156,7 @@ namespace Jellyfin.ApiClient
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs" /> instance containing the event data.</param>
-        void CurrentWebSocket_Closed(object sender, EventArgs e)
+        void OnCurrentWebSocketClosed(object sender, EventArgs e)
         {
             Logger.LogWarning("Web socket connection closed.");
 
@@ -286,7 +286,13 @@ namespace Jellyfin.ApiClient
                 throw new ArgumentException("Cannot open web socket without an access token.");
             }
 
-            return new Uri(serverAddress.ToString().Replace("http:", "ws:").Replace("https:", "wss:") + "/embywebsocket?api_key=" + AccessToken + "&deviceId=" + DeviceId);
+            var uriBuilder = new UriBuilder(new Uri(serverAddress, "/socket"))
+            {
+                Scheme = serverAddress.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.InvariantCultureIgnoreCase) ? "wss" : "ws",
+                Query = "?api_key=" + AccessToken + "&deviceId=" + DeviceId,
+            };
+
+            return uriBuilder.Uri;
         }
 
         /// <summary>

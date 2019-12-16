@@ -1,9 +1,7 @@
 Jellyfin.ApiClient
 ======================
 
-This portable class library makes it very easy to harness the power of the Jellyfin API. ~~This is available as a Nuget package:~~
-
-~~[Emby.ApiClient](https://www.nuget.org/packages/MediaBrowser.ApiClient/)~~ (Maybe sometime in the future)
+This portable class library makes it very easy to harness the power of the Jellyfin API.
 
 # Single Server Example #
 

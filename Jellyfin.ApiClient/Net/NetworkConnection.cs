@@ -37,43 +37,6 @@ namespace Jellyfin.ApiClient.Net
 
         public event EventHandler<EventArgs> NetworkChanged;
         
-        public Task SendWakeOnLan(string macAddress, string ipAddress, int port, CancellationToken cancellationToken)
-        {
-            return SendWakeOnLan(macAddress, new IPEndPoint(IPAddress.Parse(ipAddress), port), cancellationToken);
-        }
-
-        public Task SendWakeOnLan(string macAddress, int port, CancellationToken cancellationToken)
-        {
-            return SendWakeOnLan(macAddress, new IPEndPoint(IPAddress.Broadcast, port), cancellationToken);
-        }
-
-        private async Task SendWakeOnLan(string macAddress, IPEndPoint endPoint, CancellationToken cancellationToken)
-        {
-            const int payloadSize = 102;
-
-            var macBytes = PhysicalAddress.Parse(macAddress).GetAddressBytes();
-            _logger.LogDebug(string.Format("Sending magic packet to {0}", macAddress));
-
-            // Construct magic packet
-            var payload = new byte[payloadSize];
-            Buffer.BlockCopy(new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }, 0, payload, 0, 6);
-
-            for (var i = 1; i < 17; i++) 
-            { 
-                Buffer.BlockCopy(macBytes, 0, payload, 6 * i, 6);
-            }
-
-            // Send packet LAN
-            using (var udp = new UdpClient())
-            {
-                udp.Connect(endPoint);
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                await udp.SendAsync(payload, payloadSize).ConfigureAwait(false);
-            }
-        }
-        
         public NetworkStatus GetNetworkStatus()
         {
             return new NetworkStatus
