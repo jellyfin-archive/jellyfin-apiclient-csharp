@@ -252,7 +252,7 @@ namespace Jellyfin.ApiClient
 
         public async Task<ConnectionResult> Connect(ServerInfo server, ConnectionOptions options, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(server.Address.ToString()))
+            if (server.Address == null)
             {
                 // TODO: on failed connection
                 return new ConnectionResult { State = ConnectionState.Unavailable };

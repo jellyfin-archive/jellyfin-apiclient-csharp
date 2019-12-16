@@ -42,13 +42,20 @@ namespace Jellyfin.ApiClient
 
         protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, Uri serverAddress, string clientName, IDevice device, string applicationVersion)
         {
-            if (string.IsNullOrEmpty(serverAddress.ToString()))
+            if (serverAddress == null)
             {
                 throw new ArgumentNullException("serverAddress");
             }
 
-            JsonSerializer = jsonSerializer ?? throw new ArgumentNullException("jsonSerializer");
-            Logger = logger ?? throw new ArgumentNullException("logger");
+            if (jsonSerializer == null)
+            {
+                throw new ArgumentNullException("jsonSerializer");
+            }
+
+            if (logger == null)
+            {
+                throw new ArgumentNullException("logger");
+            }
 
             ClientName = clientName;
             Device = device;
@@ -58,13 +65,20 @@ namespace Jellyfin.ApiClient
 
         protected BaseApiClient(ILogger logger, IJsonSerializer jsonSerializer, Uri serverAddress, string accessToken)
         {
-            if (string.IsNullOrEmpty(serverAddress.ToString()))
+            if (serverAddress == null)
             {
                 throw new ArgumentNullException("serverAddress");
             }
 
-            JsonSerializer = jsonSerializer ?? throw new ArgumentNullException("jsonSerializer");
-            Logger = logger ?? throw new ArgumentNullException("logger");
+            if (jsonSerializer == null)
+            {
+                throw new ArgumentNullException("jsonSerializer");
+            }
+
+            if (logger == null)
+            {
+                throw new ArgumentNullException("logger");
+            }
 
             AccessToken = accessToken;
             ServerAddress = serverAddress;
@@ -249,7 +263,7 @@ namespace Jellyfin.ApiClient
         /// <exception cref="System.ArgumentNullException">handler</exception>
         protected Uri GetApiUrl(Uri handler, NameValueCollection queryString)
         {
-            if (string.IsNullOrEmpty(handler.ToString()))
+            if (handler == null)
             {
                 throw new ArgumentNullException("handler");
             }

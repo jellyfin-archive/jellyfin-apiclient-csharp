@@ -203,7 +203,7 @@ namespace Jellyfin.ApiClient
                 urlList.Reverse();
             }
 
-            if (!string.IsNullOrEmpty(ServerInfo.Address.ToString()))
+            if (ServerInfo.Address != null)
             {
                 urlList.Insert(0, ServerInfo.Address);
             }
@@ -294,7 +294,7 @@ namespace Jellyfin.ApiClient
         /// <exception cref="System.ArgumentNullException">url</exception>
         public Task<Stream> GetImageStreamAsync(Uri url, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(url.ToString()))
+            if (url == null)
             {
                 throw new ArgumentNullException("url");
             }
@@ -493,11 +493,6 @@ namespace Jellyfin.ApiClient
 
         public async Task<QueryResult<BaseItemDto>> GetUpcomingEpisodesAsync(UpcomingEpisodesQuery query)
         {
-            if (query == null)
-            {
-                throw new ArgumentNullException("query");
-            }
-
             if (query == null)
             {
                 throw new ArgumentNullException("query");
