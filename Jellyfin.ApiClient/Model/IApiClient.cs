@@ -839,7 +839,7 @@ namespace Jellyfin.ApiClient.Model
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="ArgumentNullException">userId</exception>
-        Uri GetUserImageUrl(string userId, ImageOptions options);
+        Uri GetUserImageUrl(Guid userId, ImageOptions options);
 
         /// <summary>
         /// Gets the person image URL.

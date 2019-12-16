@@ -725,7 +725,7 @@ namespace Jellyfin.ApiClient
 
             options.Tag = user.PrimaryImageTag;
 
-            return GetUserImageUrl(user, options);
+            return GetUserImageUrl(user.Id, options);
         }
 
         /// <summary>
@@ -735,14 +735,14 @@ namespace Jellyfin.ApiClient
         /// <param name="options">The options.</param>
         /// <returns>System.String.</returns>
         /// <exception cref="System.ArgumentNullException">userId</exception>
-        public Uri GetUserImageUrl(string userId, ImageOptions options)
+        public Uri GetUserImageUrl(Guid userId, ImageOptions options)
         {
-            if (string.IsNullOrEmpty(userId))
+            if (userId.Equals(Guid.Empty))
             {
                 throw new ArgumentNullException("userId");
             }
 
-            var url = new Uri("Users/" + userId + "/Images/" + options.ImageType, UriKind.Relative);
+            var url = new Uri("Users/" + userId.ToString("N", CultureInfo.InvariantCulture) + "/Images/" + options.ImageType, UriKind.Relative);
 
             return GetImageUrl(url, options, new NameValueCollection());
         }
