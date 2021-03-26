@@ -1163,20 +1163,17 @@ namespace Emby.ApiClient
 
         public Task SendMessageCommandAsync(string sessionId, MessageCommand command)
         {
-            var cmd = new GeneralCommand
+            var messageCmd = new MessageCommand
             {
-                Name = "DisplayMessage"
+                Header = command.Header,
+                Text = command.Text,
+                TimeoutMs = command.TimeoutMs
             };
 
-            cmd.Arguments["Header"] = command.Header;
-            cmd.Arguments["Text"] = command.Text;
 
-            if (command.TimeoutMs.HasValue)
-            {
-                cmd.Arguments["Timeout"] = command.TimeoutMs.Value.ToString(CultureInfo.InvariantCulture);
-            }
+            var url = GetApiUrl($"Sessions/{sessionId}/Message");
 
-            return SendCommandAsync(sessionId, cmd);
+            return PostAsync<MessageCommand, EmptyRequestResult>(url, messageCmd, CancellationToken.None);
         }
 
         /// <summary>
